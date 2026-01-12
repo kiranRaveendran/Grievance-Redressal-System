@@ -7,8 +7,9 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 import json
-from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_protect
 
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.contrib.auth import logout
@@ -236,13 +237,9 @@ class OfficerSettingsView(LoginRequiredMixin, OfficerRequiredMixin, TemplateView
 # 9️⃣ Officer Profile API
 # ======================================================
 
-@method_decorator(login_required, name="dispatch")
 class OfficerProfileAPI(APIView):
-
-    def get(self, request):
-        return Response({
-            "name": request.user.first_name or ""
-        })
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         name = request.data.get("name")
@@ -253,38 +250,52 @@ class OfficerProfileAPI(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        request.user.first_name = name
-        request.user.save()
+        user = request.user
+        user.first_name = name
+        user.save()
 
-        return Response({
-            "message": "Profile updated successfully",
-            "name": name
-        })
+        return Response(
+            {
+                "message": "Profile updated successfully",
+                "first_name": user.first_name,
+            },
+            status=status.HTTP_200_OK
+        )
 # ======================================================
 # 🔟 Officer Change Password API
 # ======================================================
 
 class OfficerPasswordChangeAPI(APIView):
-    
+    authentication_classes = [SessionAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        user = request.user
         old_password = request.data.get("old_password")
         new_password = request.data.get("new_password")
 
         if not old_password or not new_password:
-            return Response({"error": "Both fields are required"}, status=400)
+            return Response(
+                {"error": "Both old and new passwords are required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
+        user = request.user
+
+        # Check old password
         if not user.check_password(old_password):
-            return Response({"error": "Old password is incorrect"}, status=400)
+            return Response(
+                {"error": "Old password is incorrect"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
+        # Set new password
         user.set_password(new_password)
         user.save()
 
-        return Response({
-            "message": "Password changed successfully"
-        })
+        return Response(
+            {"message": "Password changed successfully"},
+            status=status.HTTP_200_OK
+        )
 # ======================================================
 # 🔚 Logout
 # ======================================================

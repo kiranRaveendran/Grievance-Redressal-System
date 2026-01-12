@@ -58,7 +58,7 @@ class OfficerDashboardView(LoginRequiredMixin, OfficerRequiredMixin, TemplateVie
 # ======================================================
 
 class OfficerDashboardAPI(APIView):
-    authentication_classes = [JWTAuthentication]   
+    authentication_classes = [SessionAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -90,6 +90,7 @@ class OfficerGrievancePageView(LoginRequiredMixin, OfficerRequiredMixin, Templat
 # 4️⃣ Officer Filter Grievance API
 # ======================================================
 class OfficerFilterGrievanceAPI(APIView):
+    authentication_classes = [SessionAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -240,6 +241,11 @@ class OfficerSettingsView(LoginRequiredMixin, OfficerRequiredMixin, TemplateView
 class OfficerProfileAPI(APIView):
     authentication_classes = [SessionAuthentication]
     permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response({
+            "name": request.user.first_name or ""
+        })
 
     def post(self, request):
         name = request.data.get("name")

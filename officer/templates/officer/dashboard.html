@@ -7,11 +7,7 @@
     <!-- DASHBOARD HEADER -->
     <div class="flex justify-between items-center mb-8">
         <h1 class="text-3xl font-bold">Officer Dashboard</h1>
-        <!-- <span id="officerName" class="text-xl font-medium text-gray-300">Officer</span>
-        <span id="navbarUserName" class="text-white">
-            {{ request.user.username }}
-        </span> -->
-
+        <span id="officerName" class="text-xl font-medium text-gray-300">Officer</span>
     </div>
 
     <!-- STATUS BOXES -->
@@ -53,7 +49,6 @@
 
 </div>
 
-<!-- JS to fetch and show grievances + officer name -->
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const tableBody = document.getElementById('grievanceTable');
@@ -61,16 +56,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const token = localStorage.getItem("token"); // JWT token
 
-    // Fetch dashboard data (grievances + officer name)
-    fetch('/api/officer/dashboard/', {
+    // Fetch dashboard counts + officer name
+    fetch('/officer/dashboard/api/', {
         headers: { "Authorization": "Bearer " + token }
     })
     .then(res => res.json())
     .then(data => {
-        // Set officer name
-        document.getElementById("officerName").innerText = data.name || "Officer";
+        const officerNameEl = document.getElementById("officerName");
+        if (officerNameEl) {
+            officerNameEl.innerText = data.name || "Officer";
+        }
 
-        // Set grievance counts (optional, from API or from fetch below)
         document.getElementById('small_pending').textContent = data.pending || 0;
         document.getElementById('small_inprogress').textContent = data.in_progress || 0;
         document.getElementById('small_resolved').textContent = data.resolved || 0;
@@ -81,7 +77,9 @@ document.addEventListener('DOMContentLoaded', () => {
     fetch('/officer/get_grievances/')
         .then(res => res.json())
         .then(data => {
-            grievances = data.grievances.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+            grievances = data.grievances.sort(
+                (a, b) => new Date(b.created_at) - new Date(a.created_at)
+            );
             renderTable();
             updateStatusCounts();
         });
@@ -103,9 +101,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td class="px-4 py-2">
                     <select class="bg-gray-800 text-white border border-gray-600 rounded px-2 py-1"
                         onchange="updateStatus(${g.id}, this.value)">
-                        <option value="Pending" ${g.status==="Pending"?"selected":""}>Pending</option>
-                        <option value="In Progress" ${g.status==="In Progress"?"selected":""}>In Progress</option>
-                        <option value="Resolved" ${g.status==="Resolved"?"selected":""}>Resolved</option>
+                        <option value="pending" ${g.status==="pending"?"selected":""}>Pending</option>
+                        <option value="in_progress" ${g.status==="in_progress"?"selected":""}>In Progress</option>
+                        <option value="resolved" ${g.status==="resolved"?"selected":""}>Resolved</option>
                     </select>
                 </td>
             `;
@@ -114,38 +112,44 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateStatusCounts() {
-        const counts = {Pending:0,"In Progress":0,Resolved:0};
+        const counts = {pending:0, in_progress:0, resolved:0};
         grievances.forEach(g => counts[g.status]++);
-        document.getElementById('small_pending').textContent = counts["Pending"];
-        document.getElementById('small_inprogress').textContent = counts["In Progress"];
-        document.getElementById('small_resolved').textContent = counts["Resolved"];
+        document.getElementById('small_pending').textContent = counts.pending;
+        document.getElementById('small_inprogress').textContent = counts.in_progress;
+        document.getElementById('small_resolved').textContent = counts.resolved;
     }
 
-    window.updateStatus = function(grievanceId,newStatus){
-        fetch('/officer/grievance/update-status/', {
+    window.updateStatus = function(grievanceId, newStatus){
+        fetch('/officer/update-grievance-status/', {
             method:'POST',
             headers:{
                 'Content-Type':'application/json',
                 'X-CSRFToken': getCookie('csrftoken')
             },
-            body: JSON.stringify({id:grievanceId,status:newStatus})
+            body: JSON.stringify({
+                grievance_id: grievanceId,
+                status: newStatus
+            })
         })
-        .then(res=>res.json())
-        .then(data=>{
-            const gIndex = grievances.findIndex(g=>g.id===grievanceId);
-            if(gIndex>-1){ grievances[gIndex].status=newStatus; updateStatusCounts(); }
+        .then(res => res.json())
+        .then(data => {
+            const gIndex = grievances.findIndex(g => g.id === grievanceId);
+            if (gIndex > -1) {
+                grievances[gIndex].status = newStatus;
+                updateStatusCounts();
+            }
         })
-        .catch(()=>{alert("Failed to update status");});
+        .catch(() => { alert("Failed to update status"); });
     }
 
     function getCookie(name){
         let cookieValue = null;
-        if(document.cookie && document.cookie!==''){
+        if(document.cookie && document.cookie !== ''){
             const cookies = document.cookie.split(';');
             for(let cookie of cookies){
                 cookie = cookie.trim();
-                if(cookie.startsWith(name+'=')){
-                    cookieValue = decodeURIComponent(cookie.substring(name.length+1));
+                if(cookie.startsWith(name + '=')){
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
                     break;
                 }
             }
@@ -155,4 +159,3 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 {% endblock %}
- 

@@ -1,21 +1,22 @@
-# backend/urls.py
 from django.contrib import admin
 from django.urls import path, include
-from django.shortcuts import redirect
-
-def redirect_to_adminpanel_reset(request):
-    uid = request.GET.get('uid', '')
-    token = request.GET.get('token', '')
-    return redirect(f"/adminpanel/reset-password?uid={uid}&token={token}")
+from django.views.generic import RedirectView
+from django.contrib.auth import views as auth_views
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('adminpanel/', include('adminpanel.urls', namespace='adminpanel')),
-    path('reset-password/', redirect_to_adminpanel_reset),  # add trailing slash
+    path("admin/", admin.site.urls),
+    path('adminpanel/', include('adminpanel.urls')),
     path('accounts/', include('accounts.urls', namespace='accounts')),
-    path('citizen/', include('citizen.urls', namespace='citizen')),
-    path('officer/', include('officer.urls', namespace='officer')),
+    path('officer/', include('officerpanel.urls')),
+    path('citizen/', include('citizen.urls')),
+    # Auth
+    path("logout/", auth_views.LogoutView.as_view(), name="logout"),
+
+    # Redirect root to login
+    path('', RedirectView.as_view(pattern_name='accounts:login', permanent=False)),
 ]
+
+
 
 
 

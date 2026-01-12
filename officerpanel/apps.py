@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class CitizenConfig(AppConfig):
+class OfficerpanelConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'citizen'
+    name = 'officerpanel'

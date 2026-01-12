@@ -1,0 +1,199 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Officer — Dashboard</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root{
+      --bg-start:#071124; --bg-end:#072f2e;
+      --brand:#0ea5a4; --brand-dark:#0b8f8b;
+      --accent:#4f46e5;
+      --text-high:#e6eef3; --text-muted:#a8bbc6;
+    }
+    body{
+      background:linear-gradient(180deg,var(--bg-start),var(--bg-end));
+      color:var(--text-high);
+      font-family:Inter, system-ui;
+      height:100vh;
+      overflow:hidden;
+    }
+    .glass{
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border: 1px solid rgba(255,255,255,0.05);
+      box-shadow: 0 8px 28px rgba(2,6,23,0.45);
+      backdrop-filter: blur(6px);
+      border-radius: .75rem;
+    }
+  </style>
+</head>
+
+<body>
+<div class="flex h-screen">
+
+  <!-- SIDEBAR -->
+  <aside class="w-72 p-6 glass">
+    <div class="flex items-center gap-3 mb-6">
+      <i data-lucide="shield" class="w-8 h-8 text-teal-400"></i>
+      <div>
+        <div class="font-bold">Officer Panel</div>
+        <div class="text-sm text-slate-400">Grievance System</div>
+      </div>
+    </div>
+
+    <nav class="space-y-2">
+      <a href="{% url 'officerpanel:dashboard' %}" class="flex gap-2 p-2 rounded hover:bg-white/5">
+        <i data-lucide="layout-dashboard"></i> Dashboard
+      </a>
+      <a href="{% url 'officerpanel:grievances' %}" class="flex gap-2 p-2 rounded hover:bg-white/5">
+        <i data-lucide="file-text"></i> My Grievances
+      </a>
+      <a href="{% url 'accounts:logout' %}" class="flex gap-2 p-2 rounded hover:bg-white/5">
+        <i data-lucide="log-out"></i> Logout
+      </a>
+    </nav>
+
+    <div class="mt-6 text-sm text-slate-400">
+      Logged in as<br>
+      <span class="font-semibold text-white">{{ request.user.username }}</span>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="flex-1 p-6 flex flex-col gap-4 overflow-hidden">
+
+    <!-- TOP BAR -->
+    <div class="glass p-4 flex justify-between items-center">
+      <h2 class="text-lg font-semibold">Officer Dashboard</h2>
+      <span class="text-sm text-slate-400">Assigned grievances overview</span>
+    </div>
+
+    <!-- METRICS -->
+    <div class="grid grid-cols-4 gap-4">
+      <div class="glass p-4 flex justify-between">
+        <div>
+          <div class="text-slate-400 text-sm">Total</div>
+          <div id="total" class="text-2xl font-bold">—</div>
+        </div>
+        <i data-lucide="list" class="w-7 h-7 text-teal-400"></i>
+      </div>
+
+      <div class="glass p-4 flex justify-between">
+        <div>
+          <div class="text-slate-400 text-sm">Pending</div>
+          <div id="pending" class="text-2xl font-bold">—</div>
+        </div>
+        <i data-lucide="clock" class="w-7 h-7 text-yellow-400"></i>
+      </div>
+
+      <div class="glass p-4 flex justify-between">
+        <div>
+          <div class="text-slate-400 text-sm">In Progress</div>
+          <div id="progress" class="text-2xl font-bold">—</div>
+        </div>
+        <i data-lucide="loader" class="w-7 h-7 text-indigo-400"></i>
+      </div>
+
+      <div class="glass p-4 flex justify-between">
+        <div>
+          <div class="text-slate-400 text-sm">Resolved</div>
+          <div id="resolved" class="text-2xl font-bold">—</div>
+        </div>
+        <i data-lucide="check-circle" class="w-7 h-7 text-green-400"></i>
+      </div>
+    </div>
+
+    <!-- GRID -->
+    <div class="grid grid-cols-3 gap-4 flex-1 min-h-0">
+
+      <!-- TABLE -->
+      <section class="glass p-4 col-span-2 flex flex-col min-h-0">
+        <h3 class="font-semibold mb-2">Recent Grievances</h3>
+        <div class="overflow-auto flex-1">
+          <table class="w-full text-sm">
+            <thead class="text-slate-400 border-b border-white/10">
+              <tr>
+                <th class="py-2 text-left">ID</th>
+                <th>Title</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="grievanceTable">
+              <tr><td colspan="4" class="py-6 text-center text-slate-400">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- CHART -->
+      <aside class="glass p-4 flex flex-col">
+        <h3 class="font-semibold mb-2">Status Distribution</h3>
+        <canvas id="statusChart"></canvas>
+      </aside>
+
+    </div>
+  </main>
+</div>
+
+<script>
+async function loadOfficerData(){
+  const res = await fetch("/officer/api/grievances/")
+  const data = await res.json();
+
+  document.getElementById("total").innerText = data.length;
+  document.getElementById("pending").innerText = data.filter(g=>g.status==="pending").length;
+  document.getElementById("progress").innerText = data.filter(g=>g.status==="in_progress").length;
+  document.getElementById("resolved").innerText = data.filter(g=>g.status==="resolved").length;
+
+  const tbody = document.getElementById("grievanceTable");
+  tbody.innerHTML = "";
+  data.slice(0,8).forEach(g=>{
+    tbody.innerHTML += `
+      <tr class="border-b border-white/5">
+        <td class="py-2">${g.id}</td>
+        <td>${g.title}</td>
+        <td>${g.status}</td>
+        <td><a class="text-teal-400" href="/officer/grievances/${g.id}/">View</a></td>
+      </tr>`;
+  });
+
+  new Chart(document.getElementById("statusChart"), {
+    type: "doughnut",
+    data: {
+      labels: ["Pending","In Progress","Resolved"],
+      datasets: [{
+        data: [
+          data.filter(g=>g.status==="pending").length,
+          data.filter(g=>g.status==="in_progress").length,
+          data.filter(g=>g.status==="resolved").length
+        ],
+        backgroundColor: ["#facc15","#6366f1","#22c55e"]
+      }]
+    }
+  });
+}
+
+loadOfficerData();
+</script>
+
+<script>lucide.createIcons();</script>
+</body>
+</html>
+
+
+
+
+
+
+
+

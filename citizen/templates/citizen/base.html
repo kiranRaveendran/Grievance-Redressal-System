@@ -1,0 +1,76 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Grievance Redressal System{% endblock %}</title>
+
+    <!-- Tailwind CDN (ok for development) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f172a, #020617);
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+        }
+    </style>
+</head>
+
+<body class="text-white min-h-screen">
+
+<!-- NAVBAR -->
+<nav class="glass m-4 px-6 py-3 flex justify-between items-center">
+    <div class="text-lg font-semibold">
+        Grievance System
+    </div>
+
+    {% if user.is_authenticated %}
+    <div class="flex items-center gap-4 text-sm">
+        <span class="text-slate-300">
+            {{ user.username }}
+        </span>
+
+        <!-- Citizen -->
+        <a href="{% url 'citizen:dashboard' %}" class="hover:text-teal-400">
+            Dashboard
+        </a>
+
+        <a href="{% url 'citizen:grievances_list' %}" class="hover:text-teal-400">
+            My Grievances
+        </a>
+
+        <a href="{% url 'citizen:submit_grievance' %}" class="hover:text-teal-400">
+            Submit
+        </a>
+
+        <!-- Logout -->
+        <a href="{% url 'logout' %}" class="text-red-400 hover:text-red-500">
+            Logout
+        </a>
+    </div>
+    {% endif %}
+</nav>
+
+<!-- MAIN CONTENT -->
+<main class="px-6 pb-6">
+    {% block content %}
+    {% endblock %}
+</main>
+
+<!-- FOOTER -->
+<footer class="text-center text-xs text-slate-500 py-4">
+    © {{ now|date:"Y" }} Grievance Redressal System
+</footer>
+
+</body>
+</html>
+
+
+
+
+

@@ -1,4 +1,3 @@
-# accounts/serializers.py
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
@@ -11,34 +10,47 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'first_name', 'last_name', 'password', 'password2')
+        fields = (
+            'id',
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            'password',
+            'password2',
+        )
         read_only_fields = ('id',)
 
     def validate(self, attrs):
-        pw = attrs.get('password')
-        pw2 = attrs.get('password2')
-
-        if pw != pw2:
-            raise serializers.ValidationError({"password": "Password fields didn't match."})
+        if attrs['password'] != attrs['password2']:
+            raise serializers.ValidationError(
+                {"password": "Password fields didn't match."}
+            )
 
         email = attrs.get('email')
         if email and User.objects.filter(email__iexact=email).exists():
-            raise serializers.ValidationError({"email": "A user with that email already exists."})
+            raise serializers.ValidationError(
+                {"email": "A user with that email already exists."}
+            )
 
         return attrs
 
     def create(self, validated_data):
-        validated_data.pop('password2', None)
+        validated_data.pop('password2')
         password = validated_data.pop('password')
+
+        validated_data['email'] = validated_data.get('email', '').lower()
 
         user = User.objects.create_user(
             password=password,
             **validated_data
         )
 
+       
         if hasattr(user, 'role'):
             user.role = 'citizen'
-            user.save(update_fields=['role'])
+            user.is_active = True
+            user.save(update_fields=['role', 'is_active'])
 
         return user
 
@@ -46,52 +58,75 @@ class RegisterSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'first_name', 'last_name', 'date_joined', 'role')
+        fields = (
+            'id',
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            'date_joined',
+            'role',
+        )
         read_only_fields = ('id', 'date_joined')
 
 
 class AdminCreateUserSerializer(serializers.ModelSerializer):
     """
-    Serializer for admin-created users. Accepts 'password' and uses set_password.
-    Admin can set role; optionally set is_staff if role == 'admin'.
+    Serializer for admin-created users.
+    Admin can set role; password is mandatory.
     """
     password = serializers.CharField(write_only=True, required=True, min_length=8)
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'first_name', 'last_name', 'role', 'password')
+        fields = (
+            'id',
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            'role',
+            'password',
+        )
         read_only_fields = ('id',)
 
     def validate_email(self, value):
+        qs = User.objects.filter(email__iexact=value)
         if self.instance:
-            qs = User.objects.filter(email__iexact=value).exclude(pk=self.instance.pk)
-            if qs.exists():
-                raise serializers.ValidationError("Another user with this email already exists.")
-        else:
-            if User.objects.filter(email__iexact=value).exists():
-                raise serializers.ValidationError("A user with that email already exists.")
-        return value
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError(
+                "A user with that email already exists."
+            )
+        return value.lower()
 
     def create(self, validated_data):
-        pwd = validated_data.pop('password')
+        password = validated_data.pop('password')
         user = User(**validated_data)
-        user.set_password(pwd)
+        user.set_password(password)
+
         if getattr(user, 'role', None) == 'admin':
             user.is_staff = True
+        else:
+            user.is_staff = False
+
+        user.is_active = True
         user.save()
         return user
 
     def update(self, instance, validated_data):
-        pwd = validated_data.pop('password', None)
+        password = validated_data.pop('password', None)
+
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
-        if pwd:
-            instance.set_password(pwd)
+
+        if password:
+            instance.set_password(password)
+
         if getattr(instance, 'role', None) == 'admin':
             instance.is_staff = True
+        else:
+            instance.is_staff = False
+
         instance.save()
         return instance
-
-
-
-

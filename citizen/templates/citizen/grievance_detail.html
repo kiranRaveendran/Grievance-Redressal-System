@@ -1,0 +1,35 @@
+{% extends "citizen/base.html" %}
+
+{% block title %}Grievance Detail{% endblock %}
+
+{% block content %}
+<h2 class="text-2xl font-bold mb-6">Grievance Detail</h2>
+
+<div class="bg-white/5 p-6 rounded shadow max-w-2xl">
+    <div class="mb-4">
+        <strong>Tracking ID:</strong> {{ grievance.tracking_id }}
+    </div>
+    <div class="mb-4">
+        <strong>Title:</strong> {{ grievance.title }}
+    </div>
+    <div class="mb-4">
+        <strong>Category:</strong> {{ grievance.category.name }}
+    </div>
+    <div class="mb-4">
+        <strong>Status:</strong> {{ grievance.status }}
+    </div>
+    <div class="mb-4">
+        <strong>Description:</strong>
+        <p class="mt-1">{{ grievance.description }}</p>
+    </div>
+
+    {% if feedback %}
+    <div class="mt-6 bg-gray-900 p-4 rounded">
+        <h3 class="font-semibold mb-2">Officer Feedback</h3>
+        <p>{{ feedback.feedback_text }}</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+

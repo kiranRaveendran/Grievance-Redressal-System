@@ -1,4 +1,3 @@
-# adminpanel/views.py
 import csv
 import logging
 from django.http import StreamingHttpResponse, JsonResponse
@@ -23,8 +22,12 @@ from django.utils.encoding import force_bytes
 from django.template.loader import render_to_string
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from .models import Grievance
+from django.core.serializers.json import DjangoJSONEncoder
 
-# local imports (models + serializers)
+
 from adminpanel.models import Category, Grievance, GrievanceRemark, ChangeLog, Department
 from .serializers import (
     CategorySerializer,
@@ -39,9 +42,7 @@ logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
-# -----------------------
-# Helpers
-# -----------------------
+
 def is_admin_user(user):
     """True for staff/superuser or user.role == 'admin'."""
     return user.is_authenticated and (
@@ -59,20 +60,20 @@ def normalize_department(data, auto_create=True):
     If auto_create=True (default) we will create the Department when the name
     does not exist. If auto_create=False we raise a DRF ValidationError.
     """
-    # if frontend already sent department_id, do nothing
+   
     if "department_id" in data:
         return data
 
-    # if they provided department as an object/string, try to resolve by id or name
+   
     if "department" in data and data.get("department") not in (None, ""):
         dept_val = data.get("department")
-        # try treat as id first
+       
         try:
             dept_id = int(dept_val)
             data["department_id"] = dept_id
             return data
         except (ValueError, TypeError):
-            # treat as name (case-insensitive)
+           
             dept_name = str(dept_val).strip()
             try:
                 dept = Department.objects.get(name__iexact=dept_name)
@@ -80,20 +81,17 @@ def normalize_department(data, auto_create=True):
                 return data
             except Department.DoesNotExist:
                 if not auto_create:
-                    # keep old behavior: return helpful 400 to client
+                   
                     raise drf_serializers.ValidationError({"department": f"Department '{dept_name}' does not exist."})
-                # create department (normalize display name)
-                normalized_name = dept_name.title()  # e.g. "water works" -> "Water Works"
-                # derive a simple code (lowercase, underscores)
+              
+                normalized_name = dept_name.title()  
+              
                 simple_code = normalized_name.lower().replace(" ", "_")
                 dept = Department.objects.create(name=normalized_name, code=simple_code)
                 data["department_id"] = dept.id
                 return data
     return data
 
-# -----------------------
-# Forms
-# -----------------------
 class AddUserForm(forms.Form):
     username = forms.CharField(max_length=150, required=True, label="Username")
     email = forms.EmailField(required=False, label="Email")
@@ -130,10 +128,37 @@ class SettingsForm(forms.Form):
     notifications_enabled = forms.BooleanField(required=False, initial=True, label='Enable Notifications')
     notification_email = forms.EmailField(required=False, label='Notification email (from)')
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated, IsAdminPanel])
+def api_officers_list(request):
+    qs = User.objects.filter(
+        Q(is_staff=True) |
+        Q(is_superuser=True) |
+        Q(role__iexact="officer")
+    ).distinct().order_by("username")
 
-# -----------------------
-# Template Views
-# -----------------------
+    return Response({
+        "results": [
+            {
+                "id": u.id,
+                "name": u.get_full_name() or u.username
+            } for u in qs
+        ]
+    })
+def grievance_detail_api(request, grievance_id):
+    g = get_object_or_404(Grievance, id=grievance_id)
+    data = {
+        "id": g.id,
+        "title": g.title,
+        "description": g.description,
+        "status": g.status,
+        "category": g.category.name if g.category else "",
+        "submitted_by": g.user.username if g.user else "",
+        "assigned_officer": g.assigned_officer.username if g.assigned_officer else "",
+        "created_at": g.created_at.strftime("%Y-%m-%d %H:%M"),
+        "updated_at": g.updated_at.strftime("%Y-%m-%d %H:%M"),
+    }
+    return JsonResponse(data, encoder=DjangoJSONEncoder)
 @login_required
 @never_cache
 @user_passes_test(is_admin_user, login_url="accounts:login")
@@ -221,7 +246,7 @@ def edit_user_view(request, pk):
     user_obj = get_object_or_404(User, pk=pk)
 
     class EditUserForm(forms.ModelForm):
-        # optional password field: leave blank to keep existing password
+       
         password = forms.CharField(
             required=False,
             widget=forms.PasswordInput,
@@ -260,9 +285,7 @@ def edit_user_view(request, pk):
     return render(request, "adminpanel/edit_user.html", {"form": form, "user_obj": user_obj})
 
 
-# -----------------------
-# Password Reset (template)
-# -----------------------
+
 @never_cache
 def reset_password_page(request):
     uidb64 = request.GET.get("uid")
@@ -298,9 +321,7 @@ def reset_password_page(request):
     return render(request, "adminpanel/reset_password_page.html", {"uid": uidb64, "token": token})
 
 
-# -----------------------
-# Settings Page
-# -----------------------
+
 @login_required
 @user_passes_test(is_admin_user)
 @require_http_methods(["GET", "POST"])
@@ -326,20 +347,14 @@ def settings_page(request):
     return render(request, 'adminpanel/settings.html', {'form': form})
 
 
-# -----------------------
-# CSV Export Helper
-# -----------------------
+
 class Echo:
     """Object that implements write() for csv.writer to stream."""
     def write(self, value):
         return value
 
 
-# -----------------------
-# API VIEWS (DRF)
-# -----------------------
 
-# Categories: list/create
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated, IsAdminPanel])
 def api_categories_list_create(request):
@@ -348,7 +363,7 @@ def api_categories_list_create(request):
         serializer = CategorySerializer(qs, many=True, context={"request": request})
         return Response(serializer.data)
 
-    # POST: normalize department (name -> id)
+   
     data = request.data.copy()
     try:
         data = normalize_department(data)
@@ -363,7 +378,6 @@ def api_categories_list_create(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# Category detail: get/update/delete
 @api_view(["GET", "PUT", "PATCH", "DELETE"])
 @permission_classes([IsAuthenticated, IsAdminPanel])
 def api_category_detail(request, pk):
@@ -388,14 +402,12 @@ def api_category_detail(request, pk):
             return Response(out.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    # DELETE: prevent removal if linked grievances exist
     if Grievance.objects.filter(category=category).exists():
         return Response({"detail": "Category has linked grievances and cannot be deleted."}, status=status.HTTP_409_CONFLICT)
     category.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-# Grievances: list & create
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated, IsAdminPanel])
 def api_grievances_list(request):
@@ -414,7 +426,7 @@ def api_grievances_list(request):
 
     qs = Grievance.objects.select_related("user", "category", "department", "assigned_officer").all().order_by("-created_at")
 
-    # Filters (same as you had; supports category id/name etc)
+
     status_q = request.GET.get("status")
     if status_q:
         qs = qs.filter(status__iexact=status_q)
@@ -455,7 +467,7 @@ def api_grievances_list(request):
         if d:
             qs = qs.filter(created_at__date__lte=d)
 
-    # Pagination-esque: limit/offset
+   
     try:
         limit = int(request.GET.get("limit") or 0)
         offset = int(request.GET.get("offset") or 0)
@@ -473,7 +485,6 @@ def api_grievances_list(request):
     return Response({"count": total, "results": serializer.data})
 
 
-# Grievance detail: get/update/delete
 @api_view(["GET", "PATCH", "PUT", "DELETE"])
 @permission_classes([IsAuthenticated, IsAdminPanel])
 def api_grievance_detail(request, pk):
@@ -520,14 +531,13 @@ def api_grievance_detail(request, pk):
             return Response(GrievanceDetailSerializer(updated, context={"request": request}).data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    # DELETE guard: cannot delete if feedback or resolved
+   
     if getattr(grievance, "feedback", None) or grievance.status == Grievance.STATUS_RESOLVED:
         return Response({"detail": "Cannot delete a grievance that has feedback or is resolved."}, status=status.HTTP_400_BAD_REQUEST)
     grievance.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-# Assign grievance to officer
 @api_view(["POST"])
 @permission_classes([IsAuthenticated, IsAdminPanel])
 def api_grievance_assign(request, pk):
@@ -561,7 +571,6 @@ def api_grievance_assign(request, pk):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-# Add remark to grievance
 @api_view(["POST"])
 @permission_classes([IsAuthenticated, IsAdminPanel])
 def api_grievance_add_remark(request, pk):
@@ -575,7 +584,6 @@ def api_grievance_add_remark(request, pk):
     return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-# Analytics summary
 @api_view(["GET"])
 @permission_classes([IsAuthenticated, IsAdminPanel])
 def api_analytics(request):
@@ -605,13 +613,13 @@ def api_analytics(request):
     })
 
 
-# Export CSV (streaming)
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated, IsAdminPanel])
 def api_export_grievances_csv(request):
     qs = Grievance.objects.select_related('user', 'category', 'department', 'assigned_officer').order_by('-created_at')
 
-    # apply filters similar to list endpoint
+   
     status_q = request.GET.get("status")
     if status_q:
         qs = qs.filter(status__iexact=status_q)
@@ -691,7 +699,7 @@ def api_export_grievances_csv(request):
     return resp
 
 
-# User status (officers list for selects)
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated, IsAdminPanel])
 def api_user_status(request):
@@ -708,7 +716,6 @@ def api_user_status(request):
     return Response({'officers': officers})
 
 
-# Admin create user serializer & list/create API (kept concise)
 class AdminCreateUserSerializer(drf_serializers.Serializer):
     username = drf_serializers.CharField(max_length=150)
     email = drf_serializers.EmailField(required=False, allow_blank=True)
@@ -743,7 +750,7 @@ class AdminCreateUserSerializer(drf_serializers.Serializer):
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated, IsAdminPanel])
 def api_users_list_create(request):
-    # GET
+    
     if request.method == "GET":
         try:
             page = max(int(request.GET.get("page", 1)), 1)
@@ -796,7 +803,7 @@ def api_users_list_create(request):
         ]
         return Response({"count": total, "results": data})
 
-    # POST -> create
+   
     serializer = AdminCreateUserSerializer(data=request.data)
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -816,7 +823,6 @@ def api_users_list_create(request):
     }, status=status.HTTP_201_CREATED)
 
 
-# User detail API (get/patch/put/delete)
 @api_view(["GET", "PATCH", "PUT", "DELETE"])
 @permission_classes([IsAuthenticated, IsAdminPanel])
 def api_user_detail(request, pk):
@@ -863,7 +869,7 @@ def api_user_detail(request, pk):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-# Password reset email (admin triggers)
+
 @api_view(["POST"])
 @permission_classes([IsAuthenticated, IsAdminPanel])
 def api_user_send_reset(request, pk):
@@ -912,7 +918,7 @@ def api_user_send_reset(request, pk):
     return Response({"detail": "Password reset link sent"}, status=status.HTTP_200_OK)
 
 
-# API password reset confirm (for SPA / API-driven flow)
+
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def api_password_reset_confirm(request):
@@ -942,7 +948,7 @@ def api_password_reset_confirm(request):
     return Response({"detail": "Password reset successfully."}, status=status.HTTP_200_OK)
 
 
-# Dev-only debug endpoint (remove in production)
+
 @login_required
 @user_passes_test(is_admin_user)
 def debug_request_inspect(request):
@@ -953,3 +959,6 @@ def debug_request_inspect(request):
         'username': getattr(request.user, 'username', None)
     }
     return JsonResponse({'meta': meta_sample, 'cookies': cookies, 'user': user_info})
+def grievance_detail_view(request, grievance_id):  # ⚠️ must match the URL param
+    # pass grievance_id to template context
+    return render(request, 'adminpanel/grievance_detail.html', {'grievance_id': grievance_id})

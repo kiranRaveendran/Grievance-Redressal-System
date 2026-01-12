@@ -1,5 +1,6 @@
 # adminpanel/urls.py
 from django.urls import path
+from .views import api_officers_list
 from . import views
 
 app_name = "adminpanel"
@@ -8,7 +9,8 @@ urlpatterns = [
     # Template views
     path('dashboard/', views.dashboard_view, name='dashboard'),
     path('grievances/', views.grievances_list_view, name='grievances_list'),
-    path('grievances/<int:pk>/', views.grievance_detail_view, name='grievance_detail'),
+    path('grievances/<int:grievance_id>/', views.grievance_detail_view, name='grievance_detail'),
+    path('api/grievances/<int:grievance_id>/', views.grievance_detail_api, name='grievance_detail_api'),
     path('analytics/', views.analytics_view, name='analytics'),
     path('users/', views.users_view, name='users'),
     path('categories/', views.categories_view, name='categories'),
@@ -20,6 +22,7 @@ urlpatterns = [
     path('reset-password/', views.reset_password_page, name='reset_password_page'),
 
     # API endpoints
+    path("api/officers/", api_officers_list, name="api_officers"),
     path('api/categories/', views.api_categories_list_create, name='api_categories'),
     path('api/categories/<int:pk>/', views.api_category_detail, name='api_category_detail'),
 

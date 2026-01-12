@@ -1,0 +1,140 @@
+{% extends "officerpanel/base.html" %}
+
+{% block title %}Grievance Detail{% endblock %}
+
+{% block content %}
+<div class="detail-wrapper">
+
+    <!-- HEADER -->
+    <div class="detail-header">
+        <h2>Grievance Detail</h2>
+        <span class="badge" id="statusBadge">Loading…</span>
+    </div>
+
+    <!-- BASIC INFO -->
+    <div class="card">
+        <h3>Grievance Information</h3>
+        <div class="grid">
+            <div><strong>Tracking ID:</strong> <span id="trackingId"></span></div>
+            <div><strong>Category:</strong> <span id="category"></span></div>
+            <div><strong>Created On:</strong> <span id="createdAt"></span></div>
+            <div><strong>Status:</strong> <span id="statusText"></span></div>
+        </div>
+    </div>
+
+    <!-- DESCRIPTION -->
+    <div class="card">
+        <h3>Description</h3>
+        <p id="description" class="description-box">Loading…</p>
+    </div>
+
+    <!-- STATUS UPDATE -->
+    <div class="card">
+        <h3>Update Status</h3>
+        <div class="status-update">
+            <select id="statusSelect">
+                <option value="pending">Pending</option>
+                <option value="in_progress">In Progress</option>
+                <option value="resolved">Resolved</option>
+            </select>
+            <button onclick="updateStatus()">Update Status</button>
+        </div>
+    </div>
+
+    <!-- REMARK -->
+    <div class="card">
+        <h3>Add Officer Remark</h3>
+        <textarea id="remarkText" rows="4" placeholder="Enter action taken / remarks..."></textarea>
+        <button onclick="submitRemark()">Submit Remark</button>
+    </div>
+
+    <!-- REMARK HISTORY -->
+    <div class="card">
+        <h3>Officer Remarks</h3>
+        <ul id="remarksList" class="remarks-list">
+            <li>Loading remarks…</li>
+        </ul>
+    </div>
+
+</div>
+
+<script>
+const grievanceId = {{ grievance_id }};
+
+/* Load grievance detail */
+fetch(`/officer/api/grievances/${grievanceId}/`)
+.then(res => res.json())
+.then(data => {
+    document.getElementById("trackingId").innerText = data.tracking_id;
+    document.getElementById("category").innerText = data.category?.name || "-";
+    document.getElementById("createdAt").innerText =
+        new Date(data.created_at).toLocaleString();
+    document.getElementById("statusText").innerText = data.status;
+    document.getElementById("description").innerText = data.description;
+    document.getElementById("statusSelect").value = data.status;
+
+    const badge = document.getElementById("statusBadge");
+    badge.innerText = data.status.replace("_"," ").toUpperCase();
+    badge.className = "badge " + data.status;
+
+    const remarksList = document.getElementById("remarksList");
+    remarksList.innerHTML = "";
+
+    if (data.remarks.length === 0) {
+        remarksList.innerHTML = "<li>No remarks added yet.</li>";
+    } else {
+        data.remarks.forEach(r => {
+            remarksList.innerHTML += `
+                <li>
+                    <strong>${new Date(r.created_at).toLocaleString()}</strong><br>
+                    ${r.remark}
+                </li>
+            `;
+        });
+    }
+});
+
+/* Update grievance status */
+function updateStatus(){
+    const status = document.getElementById("statusSelect").value;
+
+    fetch(`/officer/api/grievances/${grievanceId}/status/`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: JSON.stringify({ status })
+    })
+    .then(res => res.json())
+    .then(() => {
+        alert("Status updated successfully");
+        location.reload();
+    });
+}
+
+/* Submit officer remark */
+function submitRemark(){
+    const remark = document.getElementById("remarkText").value.trim();
+    if (!remark) {
+        alert("Please enter a remark");
+        return;
+    }
+
+    fetch(`/officer/api/grievances/${grievanceId}/remark/`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: JSON.stringify({ remark })
+    })
+    .then(res => res.json())
+    .then(() => {
+        alert("Remark added successfully");
+        location.reload();
+    });
+}
+</script>
+{% endblock %}
+

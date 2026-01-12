@@ -1,4 +1,4 @@
-# adminpanel/serializers.py
+
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 
@@ -14,7 +14,6 @@ from adminpanel.models import (
 User = get_user_model()
 
 
-# Small helpers
 class DepartmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Department
@@ -32,7 +31,7 @@ class SimpleUserSerializer(serializers.ModelSerializer):
         return (obj.get_full_name() or f"{obj.first_name} {obj.last_name}".strip())
 
 
-# Category serializer
+
 class CategorySerializer(serializers.ModelSerializer):
     department = DepartmentSerializer(read_only=True)
     department_id = serializers.PrimaryKeyRelatedField(
@@ -62,7 +61,7 @@ class CategorySerializer(serializers.ModelSerializer):
         )
 
 
-# Remark & Feedback
+
 class GrievanceRemarkSerializer(serializers.ModelSerializer):
     officer = SimpleUserSerializer(read_only=True)
     officer_id = serializers.PrimaryKeyRelatedField(
@@ -89,7 +88,7 @@ class FeedbackSerializer(serializers.ModelSerializer):
         return value
 
 
-# Grievance list/detail
+
 class GrievanceListSerializer(serializers.ModelSerializer):
     user = SimpleUserSerializer(read_only=True)
     category = CategorySerializer(read_only=True)
@@ -122,14 +121,14 @@ class GrievanceDetailSerializer(GrievanceListSerializer):
         fields = GrievanceListSerializer.Meta.fields + ("remarks", "feedback")
 
 
-# Grievance create/update - accepts department_id OR department_name
+
 class GrievanceCreateUpdateSerializer(serializers.ModelSerializer):
     user_id = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), source="user", required=False, allow_null=True)
     category_id = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all(), source="category", required=False, allow_null=True)
 
-    # prefer numeric FK writes:
+   
     department_id = serializers.PrimaryKeyRelatedField(queryset=Department.objects.all(), source="department", required=False, allow_null=True)
-    # also accept a name (string). If provided and no matching dept exists, we create it (you can change to raise error).
+   
     department_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
 
     department = DepartmentSerializer(read_only=True)
@@ -165,21 +164,20 @@ class GrievanceCreateUpdateSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs):
-        # If department_name provided, and department wasn't already set via department_id,
-        # find (case-insensitive) or create the Department instance.
+       
         dept_name = attrs.pop("department_name", None)
         if dept_name and not attrs.get("department"):
             name_clean = str(dept_name).strip()
             if name_clean:
                 dept = Department.objects.filter(name__iexact=name_clean).first()
                 if not dept:
-                    # Auto-create department. If you'd rather reject unknown names, replace with a ValidationError.
+                    
                     dept = Department.objects.create(name=name_clean)
                 attrs["department"] = dept
         return attrs
 
 
-# ChangeLog
+
 class ChangeLogSerializer(serializers.ModelSerializer):
     user = SimpleUserSerializer(read_only=True)
 

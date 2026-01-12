@@ -1,23 +1,16 @@
-# backend/citizen/admin.py
 from django.contrib import admin
-from .models import CitizenProfile, Category, Grievance,Feedback
+from adminpanel.models import Grievance, Category, Feedback, GrievanceRemark
 
-@admin.register(CitizenProfile)
-class CitizenProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'phone')
+# Admin for managing citizen grievances
+class CitizenGrievanceAdmin(admin.ModelAdmin):
+    list_display = ('tracking_id', 'title', 'user', 'status', 'category', 'created_at')
+    list_filter = ('status', 'category', 'created_at')
+    search_fields = ('title', 'tracking_id', 'user__username')
+    readonly_fields = ('tracking_id',)
 
-@admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name',)
+admin.site.register(Grievance, CitizenGrievanceAdmin)
+admin.site.register(Category)
+admin.site.register(Feedback)
+admin.site.register(GrievanceRemark)
 
-@admin.register(Grievance)
-class GrievanceAdmin(admin.ModelAdmin):
-    list_display = ('id', 'title', 'user', 'category', 'status', 'assigned_to', 'created_at')
-    list_filter = ('status', 'category')
-    search_fields = ('title', 'description', 'user__username')
-
-@admin.register(Feedback)
-class FeedbackAdmin(admin.ModelAdmin):
-    list_display = ('id', 'grievance', 'user', 'rating', 'created_at')
-    search_fields = ('grievance__title', 'user__username', 'comments')
 

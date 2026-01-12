@@ -1,0 +1,82 @@
+{% extends "officerpanel/base.html" %}
+{% block title %}My Grievances{% endblock %}
+
+{% block content %}
+<div class="bg-slate-900/70 border border-slate-700 rounded-xl p-6 shadow-lg">
+
+    <h2 class="text-2xl font-semibold mb-6 flex items-center gap-2">
+        <i data-lucide="file-text" class="text-teal-400"></i>
+        Assigned Grievances
+    </h2>
+
+    <div class="overflow-x-auto">
+        <table class="w-full border-collapse text-sm">
+            <thead>
+                <tr class="text-left text-slate-400 border-b border-slate-700">
+                    <th class="py-3">Tracking ID</th>
+                    <th>Title</th>
+                    <th>Status</th>
+                    <th>Category</th>
+                    <th>Created</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="grievanceTable">
+                <tr>
+                    <td colspan="6" class="text-center py-6 text-slate-400">
+                        Loading grievances…
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+fetch("{% url 'officerpanel:api_grievances_list' %}")
+.then(res => res.json())
+.then(data => {
+    const tbody = document.getElementById("grievanceTable");
+    tbody.innerHTML = "";
+
+    if (!data.length) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center py-6 text-slate-400">
+                    No grievances assigned
+                </td>
+            </tr>`;
+        return;
+    }
+
+    data.forEach(g => {
+        let badge =
+            g.status === "Resolved" ? "bg-green-500/20 text-green-400" :
+            g.status === "In Progress" ? "bg-yellow-500/20 text-yellow-400" :
+            "bg-red-500/20 text-red-400";
+
+        tbody.innerHTML += `
+            <tr class="border-b border-slate-800 hover:bg-slate-800/40 transition">
+                <td class="py-3 font-mono">${g.tracking_id}</td>
+                <td>${g.title}</td>
+                <td>
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold ${badge}">
+                        ${g.status}
+                    </span>
+                </td>
+                <td>${g.category?.name || "-"}</td>
+                <td>${new Date(g.created_at).toLocaleDateString()}</td>
+                <td>
+                    <a href="/officer/grievances/${g.id}/"
+                       class="text-teal-400 hover:underline">
+                        View
+                    </a>
+                </td>
+            </tr>
+        `;
+    });
+});
+</script>
+{% endblock %}
+
+

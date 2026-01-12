@@ -72,10 +72,20 @@
 <script>
 document.addEventListener("DOMContentLoaded", () => {
 
-  /* ===== GET CSRF TOKEN ===== */
+  /* ===== GET CSRF TOKEN SAFELY ===== */
   function getCSRFToken() {
-    const cookie = document.cookie.split("; ").find(row => row.startsWith("csrftoken="));
-    return cookie ? cookie.split("=")[1] : "";
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+      const cookies = document.cookie.split(";");
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.startsWith("csrftoken=")) {
+          cookieValue = decodeURIComponent(cookie.substring("csrftoken=".length));
+          break;
+        }
+      }
+    }
+    return cookieValue;
   }
 
   /* ===== PROFILE UPDATE ===== */
@@ -98,17 +108,22 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify({ name }),
       });
 
-      const data = await res.json();
-      console.log("Profile API response:", data);
+      let data = {};
+      try {
+        data = await res.json();
+      } catch (e) {
+        console.error("Non-JSON response:", e);
+      }
+
+      console.log("Profile API response:", res.status, data);
 
       if (!res.ok) {
-        alert(data.error || "Profile update failed");
+        alert(data.error || `Profile update failed (${res.status})`);
         return;
       }
 
       alert(data.message || "Profile updated successfully");
 
-      // Update navbar name
       const navName = document.getElementById("navbarUserName");
       if (navName) navName.innerText = data.first_name || name;
 
@@ -133,22 +148,28 @@ document.addEventListener("DOMContentLoaded", () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-CSRFToken": getCSRFToken()
+          "X-CSRFToken": getCSRFToken(),
         },
         credentials: "same-origin",
         body: JSON.stringify({ old_password, new_password })
       });
 
-      const data = await res.json();
-      console.log("Password API response:", data);
+      let data = {};
+      try {
+        data = await res.json();
+      } catch (e) {
+        console.error("Non-JSON response:", e);
+      }
+
+      console.log("Password API response:", res.status, data);
 
       if (!res.ok) {
-        alert(data.error || "Password change failed");
+        alert(data.error || `Password change failed (${res.status})`);
         return;
       }
 
       alert(data.message || "Password changed successfully");
-      window.location.href = "/logout/";
+      window.location.href = "/login/";
 
     } catch (err) {
       console.error(err);
@@ -158,5 +179,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 });
 </script>
+
 
 {% endblock %}

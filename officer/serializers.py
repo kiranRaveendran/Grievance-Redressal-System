@@ -1,7 +1,5 @@
 from rest_framework import serializers
-from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
-
 from citizen.models import Grievance
 from officer.models import OfficerProfile
 
@@ -41,33 +39,34 @@ class OfficerProfileSerializer(serializers.ModelSerializer):
 # Grievance Serializer (Officer View)
 # =====================================================
 class GrievanceSerializer(serializers.ModelSerializer):
-
     citizen_name = serializers.SerializerMethodField()
-   
+    category_name = serializers.SerializerMethodField()
+    assigned_officer_name = serializers.SerializerMethodField()
+
 
     class Meta:
         model = Grievance
-        fields = "__all__"
-       
-    # ----------------------------
-    # Get citizen name safely
-    # ----------------------------
+        fields = [
+            'id',
+            'citizen_name',
+            'category_name',
+            'assigned_officer_name',
+            'description',
+            'status',          # 🔥 DB STATUS (new / in_progress / resolved)
+            'created_at',
+        ]
+
     def get_citizen_name(self, obj):
         if obj.user:
-            return obj.user.username
-        return None
+            return obj.user.get_full_name() or obj.user.username
+        return "—"
 
-    # ----------------------------
-    # Get assigned officer name
-    # ----------------------------
-    def get_assigned_officer(self, obj):
-        """
-        Returns assigned officer name.
-        Priority:
-        1. Officer full name
-        2. Officer username
-        """
-        officer = getattr(obj, 'assigned_to', None)
-        if officer:
-            return officer.get_full_name() or officer.username
-        return None
+    def get_category_name(self, obj):
+        if obj.category:
+            return obj.category.name
+        return "—"
+
+    def get_assigned_officer_name(self, obj):
+        if obj.assigned_to:
+            return obj.assigned_to.get_full_name() or obj.assigned_to.username
+        return "—"

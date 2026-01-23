@@ -46,42 +46,65 @@
 <script>
 const ANALYTICS_API = "{% url 'officer:officer_analytics_api' %}";
 
-async function fetchJSON(url){ const res = await fetch(url); return res.json(); }
+async function fetchJSON(url) {
+    const res = await fetch(url, {
+        credentials: "same-origin"   
+    });
+    return res.json();
+}
 
 async function loadAnalytics(){
-    const data = await fetchJSON(ANALYTICS_API);
+    try {
+        const data = await fetchJSON(ANALYTICS_API);
 
-    document.getElementById('card-total').textContent = data.total_grievances || 0;
-    document.getElementById('card-open').textContent = (data.pending || 0) + (data.in_progress || 0);
-    document.getElementById('card-resolved').textContent = data.resolved || 0;
-    document.getElementById('card-sla').textContent = data.avg_resolution_days || "—";
-
-    new Chart(document.getElementById('statusChart'),{
-        type:'pie',
-        data:{
-            labels:['Pending','In Progress','Resolved'],
-            datasets:[{
-                data:[data.pending||0,data.in_progress||0,data.resolved||0],
-                backgroundColor:['orange','blue','green']
-            }]
+        if (!data || !data.daily_trend) {
+            console.error("Invalid analytics data", data);
+            return;
         }
-    });
 
-    new Chart(document.getElementById('trendChart'),{
-        type:'line',
-        data:{
-            labels: data.daily_trend.map(item=>item.date),
-            datasets:[{
-                label:'Daily Grievances',
-                data:data.daily_trend.map(item=>item.count),
-                borderColor:'cyan',
-                fill:false,
-                tension:0.3
-            }]
-        }
-    });
+        document.getElementById('card-total').textContent = data.total_grievances;
+        document.getElementById('card-open').textContent =
+            (data.pending || 0) + (data.in_progress || 0);
+        document.getElementById('card-resolved').textContent = data.resolved || 0;
+        document.getElementById('card-sla').textContent =
+            data.avg_resolution_days || "—";
+
+        new Chart(document.getElementById('statusChart'), {
+            type: 'pie',
+            data: {
+                labels: ['Pending', 'In Progress', 'Resolved'],
+                datasets: [{
+                    data: [
+                        data.pending || 0,
+                        data.in_progress || 0,
+                        data.resolved || 0
+                    ],
+                    backgroundColor: ['orange', 'blue', 'green']
+                }]
+            }
+        });
+
+        new Chart(document.getElementById('trendChart'), {
+            type: 'line',
+            data: {
+                labels: data.daily_trend.map(i => i.date),
+                datasets: [{
+                    label: 'Daily Grievances',
+                    data: data.daily_trend.map(i => i.count),
+                    borderColor: 'cyan',
+                    tension: 0.3,
+                    fill: false
+                }]
+            }
+        });
+
+    } catch (err) {
+        console.error("Analytics load failed", err);
+    }
 }
 
 loadAnalytics();
 </script>
+
+</div>
 {% endblock %}

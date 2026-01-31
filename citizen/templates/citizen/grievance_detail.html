@@ -1,35 +1,260 @@
-{% extends "citizen/base.html" %}
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Grievance Detail</title>
 
-{% block title %}Grievance Detail{% endblock %}
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="icon" href="{% static 'images/favicon.ico' %}">
 
-{% block content %}
-<h2 class="text-2xl font-bold mb-6">Grievance Detail</h2>
+<style>
+:root{
+  --bg-start:#0f172a;
+  --bg-end:#020617;
+  --primary:#4f46e5;
+  --primary-dark:#4338ca;
+  --text-high:#e6eef3;
+  --text-muted:#a8bbc6;
+}
 
-<div class="bg-white/5 p-6 rounded shadow max-w-2xl">
-    <div class="mb-4">
-        <strong>Tracking ID:</strong> {{ grievance.tracking_id }}
-    </div>
-    <div class="mb-4">
-        <strong>Title:</strong> {{ grievance.title }}
-    </div>
-    <div class="mb-4">
-        <strong>Category:</strong> {{ grievance.category.name }}
-    </div>
-    <div class="mb-4">
-        <strong>Status:</strong> {{ grievance.status }}
-    </div>
-    <div class="mb-4">
-        <strong>Description:</strong>
-        <p class="mt-1">{{ grievance.description }}</p>
+*{box-sizing:border-box;}
+
+html,body{
+  margin:0;
+  height:100%;
+  font-family:Inter, system-ui;
+  background:linear-gradient(135deg,var(--bg-start),var(--bg-end));
+  color:var(--text-high);
+}
+
+/* ---------- LAYOUT ---------- */
+.app{
+  display:flex;
+  min-height:100vh;
+}
+
+/* ---------- SIDEBAR ---------- */
+aside.sidebar{
+  width:260px;
+  background:linear-gradient(180deg,#0f172a,#1e293b);
+  padding:24px;
+  position:fixed;
+  height:100vh;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+}
+
+.brand{
+  display:flex;
+  gap:12px;
+  margin-bottom:2rem;
+}
+
+.brand img{
+  width:42px;
+  height:42px;
+}
+
+.sidebar nav a{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px;
+  border-radius:10px;
+  color:#fff;
+  text-decoration:none;
+}
+
+.sidebar nav a:hover{
+  background:linear-gradient(90deg,var(--primary),var(--primary-dark));
+}
+
+/* ---------- MAIN ---------- */
+main.content{
+  margin-left:260px;
+  padding:20px;
+  flex:1;
+  overflow-y:auto;   /* ✅ SCROLL ENABLED HERE */
+}
+
+/* ---------- TOPBAR ---------- */
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  background:rgba(255,255,255,.05);
+  padding:14px 18px;
+  border-radius:14px;
+  margin-bottom:16px;
+}
+
+/* ---------- CARD ---------- */
+.card{
+  background:rgba(255,255,255,.04);
+  padding:20px;
+  border-radius:16px;
+  max-width:880px;
+  margin:auto;
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+
+.label{
+  font-weight:600;
+  color:var(--text-muted);
+}
+
+/* ---------- ATTACHMENT ---------- */
+.attachment-wrap{
+  display:flex;
+  justify-content:center;
+}
+
+.attachment{
+  width:220px;
+  height:140px;
+  object-fit:cover;
+  border-radius:10px;
+}
+
+/* ---------- BUTTON ---------- */
+.btn{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  background:linear-gradient(90deg,var(--primary),var(--primary-dark));
+  padding:10px 18px;
+  border-radius:10px;
+  font-weight:600;
+}
+
+/* ---------- FEEDBACK ---------- */
+.feedback-box{
+  background:#1e293b;
+  padding:14px;
+  border-radius:12px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.feedback-comments{
+  max-height:120px;
+  overflow-y:auto;
+  padding-right:6px;
+}
+
+.feedback-comments::-webkit-scrollbar{
+  width:4px;
+}
+.feedback-comments::-webkit-scrollbar-thumb{
+  background:#4f46e5;
+  border-radius:10px;
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div>
+    <div class="brand">
+      <img src="{% static 'images/favicon.ico' %}">
+      <div>
+        <div class="font-bold">Citizen</div>
+        <div class="text-sm text-slate-400">Portal</div>
+      </div>
     </div>
 
-    {% if feedback %}
-    <div class="mt-6 bg-gray-900 p-4 rounded">
-        <h3 class="font-semibold mb-2">Officer Feedback</h3>
-        <p>{{ feedback.feedback_text }}</p>
-    </div>
-    {% endif %}
+    <nav>
+      <a href="{% url 'citizen:dashboard' %}"><i data-lucide="home"></i>Dashboard</a>
+      <a href="{% url 'citizen:grievances_list' %}"><i data-lucide="file-text"></i>My Grievances</a>
+      <a href="{% url 'citizen:submit_grievance' %}"><i data-lucide="plus-circle"></i>Submit Grievance</a>
+      <a href="{% url 'citizen:profile' %}"><i data-lucide="user"></i>Profile</a>
+    </nav>
+  </div>
+
+  <div class="text-sm text-slate-400">
+    Logged in as<br>
+    <strong class="text-white">{{ request.user.username }}</strong>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="content">
+
+<div class="topbar">
+  <h1 class="text-xl font-bold">Grievance Detail</h1>
+  <form method="post" action="{% url 'accounts:logout' %}">
+    {% csrf_token %}
+    <button class="btn">Logout</button>
+  </form>
 </div>
-{% endblock %}
 
+<div class="card">
 
+  <div><div class="label">Tracking ID</div>{{ grievance.tracking_id }}</div>
+  <div><div class="label">Title</div>{{ grievance.title }}</div>
+  <div><div class="label">Category</div>{{ grievance.category.name }}</div>
+  <div><div class="label">Status</div>{{ grievance.get_status_display }}</div>
+  <div><div class="label">Description</div>{{ grievance.description }}</div>
+
+  {% if attached_file_url %}
+  <div>
+    <div class="label">Attachment</div>
+    <div class="attachment-wrap">
+      {% if is_image %}
+        <img src="{{ attached_file_url }}" class="attachment">
+      {% else %}
+        <a href="{{ attached_file_url }}" class="text-indigo-400 underline">Download File</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if grievance.feedback %}
+  <div class="feedback-box">
+    <div class="label">Feedback</div>
+
+    <div class="flex gap-1">
+      {% for i in "12345" %}
+        {% if forloop.counter <= grievance.feedback.rating %}
+          <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
+        {% else %}
+          <i data-lucide="star" class="w-4 h-4 text-slate-500"></i>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    <div class="feedback-comments">
+      {{ grievance.feedback.comments|default:"No comments provided" }}
+    </div>
+  </div>
+
+  {% elif grievance.status == "Resolved" %}
+  <div class="flex justify-center">
+    <a href="{% url 'citizen:submit_feedback' grievance.id %}" class="btn">
+      <i data-lucide="message-square"></i> Submit Feedback
+    </a>
+  </div>
+
+  {% else %}
+  <div class="text-center text-slate-400 text-sm">
+    Feedback can be submitted once the grievance is resolved.
+  </div>
+  {% endif %}
+
+</div>
+</main>
+</div>
+
+<script>lucide.createIcons();</script>
+</body>
+</html>

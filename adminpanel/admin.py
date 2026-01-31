@@ -11,23 +11,19 @@ class CustomAdminSite(AdminSite):
     site_title = "Admin Portal"
     index_title = "Welcome to Admin Panel"
 
+# Create the instance BEFORE using it
 admin_site = CustomAdminSite(name="custom_admin")
-
 
 # -----------------------------
 # GRIEVANCE ADMIN
 # -----------------------------
 class GrievanceAdmin(admin.ModelAdmin):
-    # Only include fields that exist on your model
     list_display = ("id", "title", "status", "created_at")
     search_fields = ("title", "description", "user__username")
     list_filter = ("status", "created_at")
     ordering = ("-created_at",)
 
 
-# -----------------------------
-# CATEGORY ADMIN
-# -----------------------------
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "department")
     search_fields = ("name",)
@@ -35,27 +31,18 @@ class CategoryAdmin(admin.ModelAdmin):
     ordering = ("department", "name")
 
 
-# -----------------------------
-# DEPARTMENT ADMIN
-# -----------------------------
 class DepartmentAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "code")
     search_fields = ("name", "code")
     ordering = ("name",)
 
 
-# -----------------------------
-# GRIEVANCE REMARK ADMIN
-# -----------------------------
 class GrievanceRemarkAdmin(admin.ModelAdmin):
     list_display = ("id", "grievance", "officer", "created_at")
     search_fields = ("remark", "officer__username", "grievance__title")
     ordering = ("-created_at",)
 
 
-# -----------------------------
-# FEEDBACK ADMIN
-# -----------------------------
 class FeedbackAdmin(admin.ModelAdmin):
     list_display = ("id", "grievance", "rating", "submitted_at")
     search_fields = ("grievance__title",)
@@ -63,9 +50,6 @@ class FeedbackAdmin(admin.ModelAdmin):
     ordering = ("-submitted_at",)
 
 
-# -----------------------------
-# CHANGELOG ADMIN
-# -----------------------------
 class ChangeLogAdmin(admin.ModelAdmin):
     list_display = ("id", "user", "grievance", "action", "timestamp")
     search_fields = ("action", "user__username", "grievance__title")
@@ -75,7 +59,7 @@ class ChangeLogAdmin(admin.ModelAdmin):
 # -----------------------------
 # SAFE REGISTRATION FUNCTION
 # -----------------------------
-def register_if_exists(model_name, admin_class=None, app_label="citizen"):
+def register_if_exists(model_name, admin_class=None, app_label="adminpanel"):
     """
     Safely register models from another app into the custom admin site.
     Skips registration if the model doesn't exist or is already registered.
@@ -97,9 +81,8 @@ def register_if_exists(model_name, admin_class=None, app_label="citizen"):
 # -----------------------------
 # REGISTER MODELS
 # -----------------------------
-# Adjust app_label to match your models location
-register_if_exists("Department", DepartmentAdmin, app_label="citizen")
-register_if_exists("Category", CategoryAdmin, app_label="citizen")
+register_if_exists("Department", DepartmentAdmin, app_label="adminpanel")
+register_if_exists("Category", CategoryAdmin, app_label="adminpanel")
 register_if_exists("Grievance", GrievanceAdmin, app_label="adminpanel")
 register_if_exists("GrievanceRemark", GrievanceRemarkAdmin, app_label="adminpanel")
 register_if_exists("Feedback", FeedbackAdmin, app_label="adminpanel")

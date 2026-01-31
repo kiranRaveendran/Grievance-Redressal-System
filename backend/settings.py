@@ -134,7 +134,8 @@ LOGIN_URL = "/accounts/login/"
 STATICFILES_DIRS = [
     BASE_DIR / "static",  # global static folder (optional)
 ]
-
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # For production (when collectstatic runs)
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
@@ -189,7 +190,7 @@ EMAIL_USE_SSL = EMAIL_SMTP_USE_SSL
 EMAIL_HOST_USER = EMAIL_SMTP_USER
 EMAIL_HOST_PASSWORD = EMAIL_SMTP_PASSWORD
 DEFAULT_FROM_EMAIL = EMAIL_SMTP_USER
-FRONTEND_PASSWORD_RESET_URL = 'http://localhost:8000/reset-password'
+FRONTEND_PASSWORD_RESET_URL = 'http://localhost:8000/adminpanel/reset-password/'
 SITE_NAME = "Kerala Grievance Portal"
 PASSWORD_RESET_SUBJECT = "Password reset — Grievance Redressal System"
 

@@ -37,12 +37,17 @@ urlpatterns = [
     path('api/grievances/<int:pk>/assign/', views.api_grievance_assign, name='api_grievance_assign'),
     path('api/grievances/<int:pk>/remarks/', views.api_grievance_add_remark, name='api_grievance_add_remark'),
     path('api/export/grievances/', views.api_export_grievances_csv, name='api_export_grievances'),
-
     path('api/analytics/', views.api_analytics, name='api_analytics'),
     path('api/user-status/', views.api_user_status, name='api_user_status'),
+    path('api/departments/', views.api_departments, name='api_departments'),
 
     # Dev-only debug endpoint (remove in production)
     path('debug/inspect/', views.debug_request_inspect, name='debug_inspect'),
+    path(
+    'reset/<uid>/<token>/',
+    views.reset_password_page,  # same view handles token validation
+    name='reset_password_confirm'
+),
 ]
 
 

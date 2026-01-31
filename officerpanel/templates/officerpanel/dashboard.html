@@ -2,193 +2,254 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Officer — Dashboard</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Officer Dashboard</title>
 
-  <!-- Tailwind -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Charts -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com"></script>
 
-  <style>
-    :root{
-      --bg-start:#071124; --bg-end:#072f2e;
-      --brand:#0ea5a4; --brand-dark:#0b8f8b;
-      --accent:#4f46e5;
-      --text-high:#e6eef3; --text-muted:#a8bbc6;
-    }
-    body{
-      background:linear-gradient(180deg,var(--bg-start),var(--bg-end));
-      color:var(--text-high);
-      font-family:Inter, system-ui;
-      height:100vh;
-      overflow:hidden;
-    }
-    .glass{
-      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-      border: 1px solid rgba(255,255,255,0.05);
-      box-shadow: 0 8px 28px rgba(2,6,23,0.45);
-      backdrop-filter: blur(6px);
-      border-radius: .75rem;
-    }
-  </style>
+<!-- Lucide Icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<style>
+/* ---------- GLOBAL ---------- */
+body{
+  margin:0;
+  font-family:Inter,system-ui;
+  background:linear-gradient(180deg,#071124,#072f2e);
+  color:#e6eef3;
+  height:100vh;
+  overflow:hidden;
+}
+
+/* ---------- WAVES ---------- */
+.wave-bg{
+  position:fixed;
+  inset:0;
+  z-index:-1;
+  overflow:hidden;
+}
+.wave{
+  position:absolute;
+  width:200%;
+  height:200px;
+  background:rgba(14,165,164,0.08);
+  border-radius:100%;
+  animation:waveMove 14s linear infinite;
+}
+.wave:nth-child(1){top:15%; animation-duration:18s;}
+.wave:nth-child(2){top:45%; animation-duration:22s; opacity:.5;}
+
+@keyframes waveMove{
+  from{transform:translateX(0);}
+  to{transform:translateX(-50%);}
+}
+
+/* ---------- GLASS ---------- */
+.glass{
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.08);
+  backdrop-filter:blur(12px);
+  border-radius:1.5rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.glass:hover{
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+}
+
+/* ---------- ICONS ---------- */
+.officer-icon{
+  width:100px;height:100px;
+  color:#2dd4bf;
+  animation:pulse 2.5s infinite;
+}
+.department-icon{
+  background:rgba(45,212,191,0.15);
+  border-radius:999px;
+  color:#2dd4bf;
+}
+
+/* ---------- METRICS ---------- */
+.metric{
+  padding:28px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  border-radius:1.5rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.metric:hover{
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+}
+.metric span{font-size:2rem;font-weight:700}
+
+/* ---------- ANIM ---------- */
+@keyframes pulse{
+  0%,100%{transform:scale(1)}
+  50%{transform:scale(1.08)}
+}
+</style>
 </head>
 
 <body>
-<div class="flex h-screen">
 
-  <!-- SIDEBAR -->
-  <aside class="w-72 p-6 glass">
-    <div class="flex items-center gap-3 mb-6">
-      <i data-lucide="shield" class="w-8 h-8 text-teal-400"></i>
+<!-- WAVES -->
+<div class="wave-bg">
+  <div class="wave"></div>
+  <div class="wave"></div>
+</div>
+
+<div class="flex h-screen overflow-hidden">
+
+<!-- SIDEBAR -->
+<aside class="w-72 p-6 glass flex flex-col justify-between overflow-auto">
+  <div>
+    <div class="flex items-center gap-3 mb-8">
+      <img src="{% static 'images/favicon.ico' %}" width="42">
       <div>
-        <div class="font-bold">Officer Panel</div>
-        <div class="text-sm text-slate-400">Grievance System</div>
+        <div class="font-bold text-lg">Officer Panel</div>
+        <div class="text-sm text-slate-400">Grievance Redressal</div>
       </div>
     </div>
 
-    <nav class="space-y-2">
-      <a href="{% url 'officerpanel:dashboard' %}" class="flex gap-2 p-2 rounded hover:bg-white/5">
+    <nav class="space-y-3">
+      <a href="{% url 'officerpanel:dashboard' %}" class="flex gap-3 p-3 rounded-lg hover:bg-white/5">
         <i data-lucide="layout-dashboard"></i> Dashboard
       </a>
-      <a href="{% url 'officerpanel:grievances' %}" class="flex gap-2 p-2 rounded hover:bg-white/5">
+      <a href="{% url 'officerpanel:grievances_list' %}" class="flex gap-3 p-3 rounded-lg hover:bg-white/5">
         <i data-lucide="file-text"></i> My Grievances
       </a>
-      <a href="{% url 'accounts:logout' %}" class="flex gap-2 p-2 rounded hover:bg-white/5">
-        <i data-lucide="log-out"></i> Logout
-      </a>
+      <!-- Logout as POST -->
+      <form method="post" action="{% url 'accounts:logout' %}">
+        {% csrf_token %}
+        <button type="submit" class="flex gap-3 p-3 rounded-lg w-full text-left hover:bg-white/5">
+          <i data-lucide="log-out"></i> Logout
+        </button>
+      </form>
     </nav>
+  </div>
 
-    <div class="mt-6 text-sm text-slate-400">
-      Logged in as<br>
-      <span class="font-semibold text-white">{{ request.user.username }}</span>
+  <div class="text-sm text-slate-400 mt-6">
+    Logged in as<br>
+    <span class="font-semibold text-white">{{ request.user.username }}</span>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="flex-1 p-8 overflow-auto">
+
+<!-- OFFICER PROFILE CARD -->
+<div class="glass p-8 text-center mb-8">
+
+  <div class="flex justify-center mb-4">
+    <i data-lucide="user-circle" class="officer-icon"></i>
+  </div>
+
+  <h2 class="text-3xl font-bold">
+    {{ request.user.first_name|default:request.user.username }}
+  </h2>
+  <p class="text-slate-300 mt-1">Government Officer</p>
+
+  <div class="flex justify-center items-center gap-3 mt-4">
+    <i data-lucide="building-2" class="department-icon w-12 h-12 p-3"></i>
+    <span class="text-lg">
+      Department: <b>{{ request.user.profile.department|default:"PWD" }}</b>
+    </span>
+  </div>
+
+  <p class="mt-3 text-slate-300">
+    Assigned Grievances:
+    <span id="assignedCount" class="text-teal-400 font-bold">0</span>
+  </p>
+</div>
+
+<!-- METRICS GRID -->
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+
+  <div class="metric glass bg-teal-500/20">
+    <div>
+      <div class="text-sm text-slate-300">Total</div>
+      <span id="total">0</span>
     </div>
-  </aside>
+    <i data-lucide="list" class="text-3xl"></i>
+  </div>
 
-  <!-- MAIN -->
-  <main class="flex-1 p-6 flex flex-col gap-4 overflow-hidden">
-
-    <!-- TOP BAR -->
-    <div class="glass p-4 flex justify-between items-center">
-      <h2 class="text-lg font-semibold">Officer Dashboard</h2>
-      <span class="text-sm text-slate-400">Assigned grievances overview</span>
+  <div class="metric glass bg-orange-500/20">
+    <div>
+      <div class="text-sm text-slate-300">New / Open</div>
+      <span id="open">0</span>
     </div>
+    <i data-lucide="alert-circle" class="text-3xl"></i>
+  </div>
 
-    <!-- METRICS -->
-    <div class="grid grid-cols-4 gap-4">
-      <div class="glass p-4 flex justify-between">
-        <div>
-          <div class="text-slate-400 text-sm">Total</div>
-          <div id="total" class="text-2xl font-bold">—</div>
-        </div>
-        <i data-lucide="list" class="w-7 h-7 text-teal-400"></i>
-      </div>
-
-      <div class="glass p-4 flex justify-between">
-        <div>
-          <div class="text-slate-400 text-sm">Pending</div>
-          <div id="pending" class="text-2xl font-bold">—</div>
-        </div>
-        <i data-lucide="clock" class="w-7 h-7 text-yellow-400"></i>
-      </div>
-
-      <div class="glass p-4 flex justify-between">
-        <div>
-          <div class="text-slate-400 text-sm">In Progress</div>
-          <div id="progress" class="text-2xl font-bold">—</div>
-        </div>
-        <i data-lucide="loader" class="w-7 h-7 text-indigo-400"></i>
-      </div>
-
-      <div class="glass p-4 flex justify-between">
-        <div>
-          <div class="text-slate-400 text-sm">Resolved</div>
-          <div id="resolved" class="text-2xl font-bold">—</div>
-        </div>
-        <i data-lucide="check-circle" class="w-7 h-7 text-green-400"></i>
-      </div>
+  <div class="metric glass bg-indigo-500/20">
+    <div>
+      <div class="text-sm text-slate-300">In Progress</div>
+      <span id="progress">0</span>
     </div>
+    <i data-lucide="loader" class="text-3xl"></i>
+  </div>
 
-    <!-- GRID -->
-    <div class="grid grid-cols-3 gap-4 flex-1 min-h-0">
-
-      <!-- TABLE -->
-      <section class="glass p-4 col-span-2 flex flex-col min-h-0">
-        <h3 class="font-semibold mb-2">Recent Grievances</h3>
-        <div class="overflow-auto flex-1">
-          <table class="w-full text-sm">
-            <thead class="text-slate-400 border-b border-white/10">
-              <tr>
-                <th class="py-2 text-left">ID</th>
-                <th>Title</th>
-                <th>Status</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="grievanceTable">
-              <tr><td colspan="4" class="py-6 text-center text-slate-400">Loading…</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- CHART -->
-      <aside class="glass p-4 flex flex-col">
-        <h3 class="font-semibold mb-2">Status Distribution</h3>
-        <canvas id="statusChart"></canvas>
-      </aside>
-
+  <div class="metric glass bg-green-500/20">
+    <div>
+      <div class="text-sm text-slate-300">Resolved</div>
+      <span id="resolved">0</span>
     </div>
-  </main>
+    <i data-lucide="check-circle" class="text-3xl"></i>
+  </div>
+
+</div>
+
+</main>
 </div>
 
 <script>
 async function loadOfficerData(){
-  const res = await fetch("/officer/api/grievances/")
+  const res = await fetch("/officer/api/grievances/");
   const data = await res.json();
 
+  const normalize = s => s.toLowerCase().replace(/\s+/g,'_');
+
+  let open=0, progress=0, resolved=0;
+
+  data.forEach(g=>{
+    const st = normalize(g.status);
+    if(["new","open"].includes(st)) open++;
+    else if(st==="in_progress") progress++;
+    else if(st==="resolved") resolved++;
+  });
+
   document.getElementById("total").innerText = data.length;
-  document.getElementById("pending").innerText = data.filter(g=>g.status==="pending").length;
-  document.getElementById("progress").innerText = data.filter(g=>g.status==="in_progress").length;
-  document.getElementById("resolved").innerText = data.filter(g=>g.status==="resolved").length;
-
-  const tbody = document.getElementById("grievanceTable");
-  tbody.innerHTML = "";
-  data.slice(0,8).forEach(g=>{
-    tbody.innerHTML += `
-      <tr class="border-b border-white/5">
-        <td class="py-2">${g.id}</td>
-        <td>${g.title}</td>
-        <td>${g.status}</td>
-        <td><a class="text-teal-400" href="/officer/grievances/${g.id}/">View</a></td>
-      </tr>`;
-  });
-
-  new Chart(document.getElementById("statusChart"), {
-    type: "doughnut",
-    data: {
-      labels: ["Pending","In Progress","Resolved"],
-      datasets: [{
-        data: [
-          data.filter(g=>g.status==="pending").length,
-          data.filter(g=>g.status==="in_progress").length,
-          data.filter(g=>g.status==="resolved").length
-        ],
-        backgroundColor: ["#facc15","#6366f1","#22c55e"]
-      }]
-    }
-  });
+  document.getElementById("open").innerText = open;
+  document.getElementById("progress").innerText = progress;
+  document.getElementById("resolved").innerText = resolved;
+  document.getElementById("assignedCount").innerText = data.length;
 }
 
-loadOfficerData();
+document.addEventListener("DOMContentLoaded",()=>{
+  loadOfficerData();
+  lucide.createIcons();
+});
 </script>
 
-<script>lucide.createIcons();</script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

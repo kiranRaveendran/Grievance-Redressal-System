@@ -2,596 +2,260 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Admin — Officers</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <link rel="icon" href="{% static 'images/favicon.ico' %}">
-  <style>
-    :root{
-      --bg-1: #071126; /* deep blue */
-      --bg-2: #042333; /* teal indigo */
-      --card: rgba(255,255,255,0.03);
-      --muted: #9fb6c2;
-      --accent: linear-gradient(90deg,#06b6d4,#0ea5a4);
-      --glass-border: rgba(255,255,255,0.06);
-      --success: #10b981;
-      --modal-bg: #021823; /* solid modal background */
-      --input-bg: #062029; /* solid input background */
-    }
-    *{box-sizing:border-box}
-    body{margin:0;min-height:100vh;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial;background:radial-gradient(800px 500px at 10% 10%, rgba(14,165,164,0.05), transparent), linear-gradient(180deg,var(--bg-1),var(--bg-2));color:#e6eef3;-webkit-font-smoothing:antialiased}
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin Panel — Categories</title>
 
-    /* layout */
-    .app{display:flex;gap:20px;min-height:100vh;padding:28px}
-    .sidebar{width:260px}
-    .main{flex:1;display:flex;flex-direction:column;gap:20px}
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="icon" href="{% static 'images/favicon.ico' %}">
 
-    /* sidebar */
-    .sidebar .card{padding:20px;border-radius:14px;border:1px solid var(--glass-border);background:linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.009));box-shadow:0 12px 38px rgba(2,6,23,0.6)}
-    .brand{display:flex;align-items:center;gap:12px}
-    .brand img{width:48px;height:48px;border-radius:10px}
-    .nav{margin-top:18px;display:flex;flex-direction:column;gap:8px}
-    .nav a{padding:10px 12px;border-radius:10px;color:var(--muted);text-decoration:none;display:flex;align-items:center;gap:10px}
-    .nav a.active{background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));color:#dff7f6}
+<style>
+:root{
+  --bg-1:#0a1f2f;
+  --bg-2:#071426;
+  --card-bg:rgba(255,255,255,0.05);
+  --border:rgba(255,255,255,0.08);
+}
+body{
+  background:linear-gradient(180deg,var(--bg-1),var(--bg-2));
+  color:#e6eef3;
+  font-family:Inter,system-ui;
+}
+.sidebar{
+  width:260px;
+  position:fixed;
+  inset:0 auto 0 0;
+  background:var(--card-bg);
+  border-right:1px solid var(--border);
+}
+.main{
+  margin-left:260px;
+  padding:24px;
+}
+.card{
+  background:var(--card-bg);
+  border:1px solid var(--border);
+  border-radius:16px;
+}
+.nav a{
+  display:flex;
+  gap:12px;
+  padding:10px 14px;
+  border-radius:10px;
+  color:#9fb6c2;
+  text-decoration:none;
+}
+.nav a.active,.nav a:hover{
+  background:rgba(255,255,255,.05);
+  color:#fff;
+}
+.table-card{
+  overflow:auto;
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+th,td{
+  padding:12px;
+  border-bottom:1px solid var(--border);
+}
+.badge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:4px 10px;
+  border-radius:999px;
+  font-size:.8rem;
+  font-weight:600;
+}
 
-    /* header */
-    header.top{display:flex;justify-content:space-between;align-items:center;gap:16px}
-    .searchbar{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.04);padding:10px 12px;border-radius:12px;display:flex;align-items:center;gap:10px;min-width:360px}
-    .searchbar input{background:transparent;border:0;outline:none;color:inherit;width:100%}
+/* Badge colors */
+.badge.hr{background:rgba(34,197,94,.2);color:#22c55e;}
+.badge.it{background:rgba(59,130,246,.2);color:#3b82f6;}
+.badge.finance{background:rgba(245,158,11,.2);color:#f59e0b;}
+.badge.admin{background:rgba(168,85,247,.2);color:#a855f7;}
+.badge.default{background:rgba(148,163,184,.2);color:#94a3b8;}
 
-    /* stats */
-    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-    .stat-card{padding:16px;border-radius:12px;border:1px solid var(--glass-border);background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.008));display:flex;justify-content:space-between;align-items:center}
-    .stat-left{display:flex;flex-direction:column}
-    .stat-value{font-size:1.25rem;font-weight:700}
-    .stat-label{color:var(--muted);font-size:0.9rem}
-
-    /* table */
-    .table-card{padding:12px;border-radius:12px;border:1px solid var(--glass-border);background:linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.006));box-shadow:0 8px 24px rgba(2,6,23,0.45)}
-    table{width:100%;border-collapse:collapse}
-    thead th{color:var(--muted);text-align:left;padding:12px 10px;font-size:0.9rem}
-    tbody tr{transition:transform .12s ease, background .12s ease}
-    tbody tr:hover{transform:translateY(-2px)}
-    .row{background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));border:1px solid rgba(255,255,255,0.02);border-radius:10px;margin-bottom:10px}
-    td{padding:12px 10px;vertical-align:middle}
-    .avatar{width:44px;height:44px;border-radius:10px;background:linear-gradient(90deg,#0ea5a4,#06b6d4);display:flex;align-items:center;justify-content:center;font-weight:700;color:#022426}
-    .dept-badge{display:inline-block;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,0.03);color:var(--muted);font-size:0.85rem}
-    /* actions */
-    /* general button used across UI */
-    .btn{padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:rgba(255,255,255,0.04);color:var(--text, #e6eef3);cursor:pointer;transition:all .12s ease}
-    .btn:hover{transform:translateY(-2px);background:linear-gradient(90deg,#0ea5a4,#06b6d4);color:#012a28}
-    .btn.primary{background:var(--accent);color:#042028;border:none}
-
-    /* action buttons inside table rows */
-    .actions button{margin-left:8px;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:rgba(255,255,255,0.03);color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
-    .actions button:hover{background:linear-gradient(90deg,#0ea5a4,#06b6d4);color:#042028}
-    .actions button.primary{background:var(--accent);color:#042028}
-    .actions button i{pointer-events:none} /* ensure clicking the icon triggers the button */
-
-    /* modal */
-    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(2,6,23,0.6);z-index:60}
-    .modal.show{display:flex}
-    .modal .card{width:100%;max-width:760px;background:var(--modal-bg);border-radius:12px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 20px 50px rgba(2,6,23,0.7);padding:20px}
-
-    /* inputs (solid, not transparent) */
-    input[type="text"], input[type="email"], textarea{background:var(--input-bg);border:1px solid rgba(255,255,255,0.04);padding:10px;border-radius:10px;color:inherit;width:100%;outline:none}
-
-    /* footer / pagination */
-    .pager{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
-    .pager .controls{display:flex;gap:8px}
-
-    @media(max-width:1100px){.stats{grid-template-columns:repeat(1,1fr)}.searchbar{min-width:220px}}
-    @media(max-width:760px){.app{flex-direction:column;padding:16px}.sidebar{width:100%}.main{gap:12px}}
-  </style>
+.modal{
+  position:fixed;
+  inset:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  background:rgba(0,0,0,.6);
+}
+.modal.show{display:flex}
+input,select{
+  width:100%;
+  background:#0c2035;
+  border:1px solid var(--border);
+  padding:10px;
+  border-radius:12px;
+}
+</style>
 </head>
+
 <body>
-<div class="app">
-  <aside class="sidebar">
-    <div class="card">
-      <div class="brand">
-        <img src="{% static 'images/favicon.ico' %}" alt="logo" />
-        <div>
-          <div style="font-weight:800;font-size:1.05rem">Grievance Admin</div>
-          <div style="color:var(--muted);font-size:.85rem">Kerala • Control Center</div>
-        </div>
-      </div>
-      <nav class="nav" style="margin-top:16px">
-        <a href="{% url 'adminpanel:dashboard' %}"><i data-lucide="home" class="w-4 h-4"></i> Dashboard</a>
-        <a href="{% url 'adminpanel:grievances_list' %}"><i data-lucide="file-text" class="w-4 h-4"></i> Grievances</a>
-        <a href="{% url 'adminpanel:analytics' %}"><i data-lucide="bar-chart-2" class="w-4 h-4"></i> Analytics</a>
-        <a href="{% url 'adminpanel:users' %}"><i data-lucide="users" class="w-4 h-4"></i> Users</a>
-        <a href="{% url 'adminpanel:categories' %}" class="active"><i data-lucide="user-check" class="w-4 h-4"></i> Officers</a>
-      </nav>
+<div class="sidebar p-5">
+  <div class="flex items-center gap-3 mb-6">
+    <img src="{% static 'images/favicon.ico' %}" width="36">
+    <span class="font-bold text-lg">Admin</span>
+  </div>
+  <nav class="nav flex flex-col gap-2">
+    <a href="{% url 'adminpanel:dashboard' %}"><i data-lucide="home"></i>Dashboard</a>
+    <a href="{% url 'adminpanel:grievances_list' %}"><i data-lucide="file-text"></i>Grievances</a>
+    <a href="{% url 'adminpanel:users' %}"><i data-lucide="users"></i>Users</a>
 
-      <div style="margin-top:18px;border-top:1px solid rgba(255,255,255,0.02);padding-top:14px;color:var(--muted);font-size:.95rem">
-        <div>Signed in as</div>
-        <div style="font-weight:700;margin-top:4px">{{ request.user.username }}</div>
-      </div>
-    </div>
-  </aside>
+    <!-- SINGLE clean icon for Categories -->
+    <a class="active" href="{% url 'adminpanel:categories' %}">
+      <i data-lucide="tag"></i>Categories
+    </a>
 
-  <main class="main">
-    <header class="top">
-      <div>
-        <div style="font-size:1.2rem;font-weight:800">Officers</div>
-        <div style="color:var(--muted);margin-top:4px">Manage officers, departments and usage</div>
-      </div>
-
-      <div style="display:flex;gap:12px;align-items:center">
-        <div class="searchbar">
-          <i data-lucide="search" class="w-4 h-4" style="color:var(--muted)"></i>
-          <input id="searchBox" placeholder="Search name, department..." />
-          <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
-            <button id="filterBtn" class="btn" title="Filters"><i data-lucide="funnel" class="w-4 h-4"></i></button>
-          </div>
-        </div>
-
-        <button id="addBtn" class="btn primary" style="padding:10px 14px;border-radius:12px;background:var(--accent);color:#042028;font-weight:700;display:flex;align-items:center;gap:8px"><i data-lucide="user-plus" class="w-4 h-4"></i> Add Officer</button>
-
-        <form method="post" action="{% url 'accounts:logout' %}" style="display:inline"><input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}" /><button class="btn" style="background:rgba(255,255,255,0.02);padding:8px 12px;border-radius:10px">Sign out</button></form>
-      </div>
-    </header>
-
-    <section class="stats">
-      <div class="stat-card">
-        <div class="stat-left">
-          <div class="stat-label">Total officers</div>
-          <div id="totalCategories" class="stat-value">—</div>
-        </div>
-        <div style="background:rgba(255,255,255,0.03);padding:10px;border-radius:10px"><i data-lucide="users" class="w-5 h-5"></i></div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-left">
-          <div class="stat-label">Active departments</div>
-          <div id="deptCount" class="stat-value">—</div>
-        </div>
-        <div style="background:rgba(255,255,255,0.03);padding:10px;border-radius:10px"><i data-lucide="map-pin" class="w-5 h-5"></i></div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-left">
-          <div class="stat-label">Avg. usage</div>
-          <div id="avgUsage" class="stat-value">—</div>
-        </div>
-        <div style="background:rgba(255,255,255,0.03);padding:10px;border-radius:10px"><i data-lucide="activity" class="w-5 h-5"></i></div>
-      </div>
-    </section>
-
-    <div class="table-card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div style="color:var(--muted)">Showing <strong id="showingInfo">—</strong></div>
-        <div class="controls" style="display:flex;gap:8px;align-items:center">
-          <button id="prevPage" class="btn">Prev</button>
-          <button id="nextPage" class="btn">Next</button>
-        </div>
-      </div>
-
-      <div style="overflow:auto">
-        <table aria-live="polite">
-          <thead>
-            <tr>
-              <th style="width:60px">ID</th>
-              <th>Name</th>
-              <th style="width:230px">Department</th>
-              <th style="width:120px">Usage</th>
-              <th style="width:150px;text-align:right">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="categoryBody">
-            <tr><td colspan="5" style="padding:40px;text-align:center;color:var(--muted)">Loading officers…</td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="pager">
-        <div class="controls">
-          <button id="prevPageBottom" class="btn">◀</button>
-          <button id="nextPageBottom" class="btn">▶</button>
-        </div>
-      </div>
-    </div>
-
-  </main>
+    <a href="{% url 'adminpanel:analytics' %}"><i data-lucide="bar-chart-2"></i>Analytics</a>
+    <a href="{% url 'adminpanel:settings' %}"><i data-lucide="settings"></i>Settings</a>
+  </nav>
 </div>
 
-<!-- MODAL: Add / Edit Officer -->
-<div id="catModal" class="modal"><div class="card">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-    <div style="font-weight:800" id="catModalTitle">Add Officer</div>
-    <button id="catClose" class="btn">✕</button>
+<main class="main">
+  <div class="flex justify-between items-center mb-6">
+    <h2 class="text-2xl font-bold">Manage Categories</h2>
+    <button id="addBtn"
+      class="px-5 py-2 rounded-lg bg-gradient-to-r from-cyan-400 to-teal-500 text-black font-semibold flex gap-2">
+      <i data-lucide="plus"></i>Add Category
+    </button>
   </div>
-  <div style="display:flex;gap:12px;flex-wrap:wrap">
-    <div style="flex:1 1 320px">
-      <label class="muted small">Name</label>
-      <input id="catName" type="text" />
-      <div id="catNameErr" style="color:#ff9aa2;display:none;margin-top:6px;font-size:.9rem"></div>
-    </div>
-    <div style="flex:1 1 220px">
-      <label class="muted small">Department</label>
-      <input id="catDept" type="text" />
-      <div id="catDeptErr" style="color:#ff9aa2;display:none;margin-top:6px;font-size:.9rem"></div>
-    </div>
-  </div>
-  <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:12px">
-    <button id="catCancel" class="btn">Cancel</button>
-    <button id="catSave" class="btn primary">Save</button>
-  </div>
-</div></div>
 
-<!-- MODAL: Delete -->
-<div id="delModal" class="modal"><div class="card">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><strong>Delete Officer</strong><button id="delClose" class="btn">✕</button></div>
-  <div style="color:var(--muted);margin-bottom:12px">Are you sure you want to delete <strong id="delName">this officer</strong>?</div>
-  <div style="display:flex;justify-content:flex-end;gap:10px">
-    <button id="delCancel" class="btn">Cancel</button>
-    <button id="delConfirm" class="btn" style="background:#dc2626;color:#fff;border-radius:10px;padding:8px 12px">Delete</button>
+  <div class="card table-card p-4">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th><th>Name</th><th>Department</th><th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="categoryBody">
+        <tr><td colspan="4" class="text-center opacity-70">Loading…</td></tr>
+      </tbody>
+    </table>
   </div>
-</div></div>
+</main>
+
+<!-- Modal -->
+<div id="categoryModal" class="modal">
+  <div class="card p-6 w-full max-w-md">
+    <h3 id="modalTitle" class="text-xl font-bold mb-4">Add Category</h3>
+    <input id="categoryName" placeholder="Category name" class="mb-3">
+    <select id="categoryDept"></select>
+    <div class="flex justify-end gap-3 mt-6">
+      <button onclick="hideModal()">Cancel</button>
+      <button id="modalSave"
+        class="px-4 py-2 rounded bg-gradient-to-r from-cyan-400 to-teal-500 text-black">
+        Save
+      </button>
+    </div>
+  </div>
+</div>
 
 <script>
-/* ---------- Config & state ---------- */
-const API_BASE = '/adminpanel/api/categories/'; // default list/create endpoint
-let categories = [];            // local array when API returns plain array
-let filtered = [];              // filtered result for client-side search/pagination
-let currentPage = 1;            // client-side page index (1-based)
-const pageSize = 12;
+lucide.createIcons();
 
-let editingId = null;
-let deletingId = null;
+const API_CATEGORIES='/adminpanel/api/categories/';
+const API_DEPTS='/adminpanel/api/departments/';
+let categories=[],departments=[],editingId=null;
 
-/* server-pagination state (if API returns next/previous links) */
-let serverNext = null;
-let serverPrev = null;
-let serverCount = null;
-let lastLoadedUrl = API_BASE;
-
-/* ---------- helpers ---------- */
-function getCookie(name){const v=document.cookie.match('(^|;)\\s*'+name+'\\s*=\\s*([^;]+)');return v?v.pop():''}
-async function apiFetch(url, opts={}){
-  // allow passing body & method; default to same-origin credentials and CSRF for Django sessions
-  opts = Object.assign({credentials:'same-origin'}, opts);
-  opts.headers = Object.assign({
-    'Accept':'application/json',
-    'X-Requested-With':'XMLHttpRequest',
-    'X-CSRFToken': getCookie('csrftoken')
-  }, opts.headers || {});
-  const res = await fetch(url, opts);
-  if(!res.ok){
-    // try to parse body for debugging
-    let body = null;
-    try{ body = await res.clone().json(); }catch(e){}
-    const err = new Error('HTTP '+res.status);
-    err.status = res.status; err.body = body;
-    throw err;
-  }
-  if(res.status === 204) return null;
-  // handle cases where response isn't json
-  const text = await res.text();
-  try { return JSON.parse(text); } catch(e) { return text; }
+function badgeClass(name){
+  name=name?.toLowerCase()||'';
+  if(name.includes('hr'))return'hr';
+  if(name.includes('it'))return'it';
+  if(name.includes('finance'))return'finance';
+  if(name.includes('admin'))return'admin';
+  return'default';
 }
 
-function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;') }
-function renderValue(v){
-  if(v===null||v===undefined||v==='') return '-';
-  if(typeof v === 'object'){
-    if(v.name) return escapeHtml(v.name);
-    if(v.title) return escapeHtml(v.title);
-    try{ const s = JSON.stringify(v); return escapeHtml(s.length>80? s.slice(0,77)+'...': s) }catch(e){ return '-' }
-  }
-  return escapeHtml(v);
-}
+function showModal(){categoryModal.classList.add('show')}
+function hideModal(){categoryModal.classList.remove('show')}
 
-/* ---------- rendering ---------- */
-function renderTable(){
-  const tbody = document.getElementById('categoryBody');
-  tbody.innerHTML = '';
-  if(!filtered || filtered.length === 0){
-    tbody.innerHTML = '<tr><td colspan="5" style="padding:40px;text-align:center;color:var(--muted)">No officers found.</td></tr>';
-    document.getElementById('showingInfo').textContent='0';
-    if(window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
-    return;
-  }
+addBtn.onclick=()=>{editingId=null;showModal()}
 
-  // If we're using server-side pagination, filtered holds current page only
-  const useServerPaging = !!(serverNext !== null || serverPrev !== null);
-  const start = useServerPaging ? 1 : (currentPage-1)*pageSize + 1;
-  const rows = useServerPaging ? filtered : filtered.slice((currentPage-1)*pageSize, (currentPage-1)*pageSize + pageSize);
-
-  rows.forEach(c => {
-    const tr = document.createElement('tr');
-    tr.className = 'row';
-    // department may be object or string
-    const deptDisplay = (typeof c.department === 'object') ? (c.department.name || c.department) : c.department;
-    tr.innerHTML = `
-      <td style="width:60px">${renderValue(c.id)}</td>
-      <td>
-        <div style="display:flex;gap:12px;align-items:center">
-          <div class="avatar">${(c.name && typeof c.name==='string')?c.name.charAt(0).toUpperCase():'-'}</div>
-          <div>
-            <div style="font-weight:700">${renderValue(c.name)}</div>
-            <div style="color:var(--muted);font-size:13px">ID: ${renderValue(c.id)}</div>
-          </div>
-        </div>
-      </td>
-      <td><span class="dept-badge">${renderValue(deptDisplay)}</span></td>
-      <td>${renderValue(c.count)}</td>
-      <td style="text-align:right" class="actions">
-        <button data-edit="${escapeHtml(c.id)}" title="Edit"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
-        <button data-del="${escapeHtml(c.id)}" title="Delete"><i data-lucide="trash" class="w-4 h-4" style="color:#ff9aa2"></i></button>
-      </td>
-    `;
-    tbody.appendChild(tr);
+async function loadDepartments(){
+  const r=await fetch(API_DEPTS);
+  departments=await r.json();
+  categoryDept.innerHTML='<option value="">Select department</option>';
+  departments.forEach(d=>{
+    categoryDept.innerHTML+=`<option value="${d.id}">${d.name}</option>`;
   });
-
-  // showing info
-  if(useServerPaging){
-    const from = 1;
-    const to = rows.length;
-    document.getElementById('showingInfo').textContent = `${from}-${to} of ${serverCount !== null ? serverCount : '?'}`;
-  } else {
-    const from = (currentPage-1)*pageSize + 1;
-    const to = Math.min((currentPage-1)*pageSize + rows.length, filtered.length);
-    document.getElementById('showingInfo').textContent = `${from}-${to} of ${filtered.length}`;
-  }
-
-  // attach handlers
-  Array.from(document.querySelectorAll('button[data-edit]')).forEach(b=>b.addEventListener('click', onEditClick));
-  Array.from(document.querySelectorAll('button[data-del]')).forEach(b=>b.addEventListener('click', onDelClick));
-
-  // render lucide icons for freshly added nodes
-  if(window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
 }
 
-/* ---------- load data (supports DRF pagination or plain array) ---------- */
-async function loadCategories(url = API_BASE){
-  lastLoadedUrl = url;
-  try {
-    const data = await apiFetch(url);
-    // If API returned DRF-style paginated object
-    if(data && Array.isArray(data.results)){
-      categories = data.results || [];
-      serverNext = data.next || null;
-      serverPrev = data.previous || null;
-      serverCount = (typeof data.count === 'number') ? data.count : null;
-      filtered = categories.slice(); // filtered contains current page items
-      currentPage = 1; // server page uses different indexing; we show rows directly
-    }
-    // If API returned plain array
-    else if(Array.isArray(data)){
-      categories = data;
-      serverNext = serverPrev = null;
-      serverCount = null;
-      filtered = categories.slice();
-      currentPage = 1;
-    }
-    // Unexpected shape: try to coerce
-    else {
-      console.warn('Unexpected response shape from categories API', data);
-      categories = Array.isArray(data) ? data : [];
-      filtered = categories.slice();
-      serverNext = serverPrev = null;
-      serverCount = null;
-      currentPage = 1;
-    }
-
-    renderTable();
-    // stats
-    document.getElementById('totalCategories').textContent = String((Array.isArray(categories) ? categories.length : 0) || 0);
-    const deptNames = new Set((categories || []).map(c=>{
-      const d = (typeof c.department === 'object' ? (c.department.name || '') : (c.department || ''));
-      return (d||'').toString().trim();
-    }).filter(Boolean));
-    document.getElementById('deptCount').textContent = String(deptNames.size || '—');
-    const avg = (categories || []).reduce((s,c)=>s+(Number(c.count)||0),0) / ((categories && categories.length) || 1);
-    document.getElementById('avgUsage').textContent = (categories && categories.length) ? (Math.round(avg*10)/10) : '—';
-
-    // enable/disable pagination buttons (server or client)
-    updatePaginationButtons();
-  } catch (err){
-    console.error(err);
-    document.getElementById('categoryBody').innerHTML = '<tr><td colspan="5" style="padding:40px;text-align:center;color:var(--muted)">Failed to load officers.</td></tr>';
-    document.getElementById('totalCategories').textContent='—';
-    serverNext = serverPrev = null;
-    serverCount = null;
-    updatePaginationButtons();
-    if(window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
-  }
-}
-
-/* ---------- pagination UI ---------- */
-function updatePaginationButtons(){
-  const prevBtns = [document.getElementById('prevPage'), document.getElementById('prevPageBottom')];
-  const nextBtns = [document.getElementById('nextPage'), document.getElementById('nextPageBottom')];
-
-  // if server pagination is active use serverNext/serverPrev, else use client paging
-  if(serverNext !== null || serverPrev !== null){
-    prevBtns.forEach(b => { if(b) b.disabled = !serverPrev; });
-    nextBtns.forEach(b => { if(b) b.disabled = !serverNext; });
-  } else {
-    const max = Math.ceil((filtered.length || 0) / pageSize) || 1;
-    prevBtns.forEach(b => { if(b) b.disabled = (currentPage <= 1); });
-    nextBtns.forEach(b => { if(b) b.disabled = (currentPage >= max); });
-  }
-}
-
-/* ---------- modal helpers ---------- */
-function showModal(id){ document.getElementById(id).classList.add('show'); }
-function hideModal(id){ document.getElementById(id).classList.remove('show'); }
-
-function openEdit(item){
-  document.getElementById('catModalTitle').textContent = item ? 'Edit Officer' : 'Add Officer';
-  document.getElementById('catName').value = (item && item.name && typeof item.name === 'object') ? (item.name.name || '') : (item && item.name ? item.name : '');
-  document.getElementById('catDept').value = (item && item.department && typeof item.department === 'object') ? (item.department.name || '') : (item && item.department ? item.department : '');
-  document.getElementById('catNameErr').style.display = 'none';
-  showModal('catModal');
-}
-
-/* ---------- events: open / close modals ---------- */
-['catClose','catCancel'].forEach(id => {
-  const el = document.getElementById(id);
-  if(el) el.addEventListener('click', ()=> hideModal('catModal'));
-});
-document.getElementById('addBtn').addEventListener('click', ()=>{
-  editingId = null;
-  document.getElementById('catModalTitle').textContent = 'Add Officer';
-  document.getElementById('catName').value = '';
-  document.getElementById('catDept').value = '';
-  document.getElementById('catNameErr').style.display = 'none';
-  showModal('catModal');
-});
-
-/* ---------- save (create/update) ---------- */
-document.getElementById('catSave').addEventListener('click', async ()=>{
-  const name = document.getElementById('catName').value.trim();
-  const dept = document.getElementById('catDept').value.trim();
-  document.getElementById('catNameErr').style.display = 'none';
-  if(!name){
-    document.getElementById('catNameErr').style.display = 'block';
-    document.getElementById('catNameErr').textContent = 'Name required';
-    return;
-  }
-  try{
-    if(editingId){
-      // PATCH to update
-      await apiFetch(API_BASE + editingId + '/', {
-        method: 'PATCH',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ name, department: dept || null })
-      });
-    } else {
-      // POST to create (server may ignore department if expected object)
-      await apiFetch(API_BASE, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ name, department: dept || null })
-      });
-    }
-    // reload current page: if server paged, reload lastLoadedUrl; else reload base
-    await loadCategories(lastLoadedUrl || API_BASE);
-    hideModal('catModal');
-  } catch (err){
-    console.error(err);
-    alert('Save failed — check console for details');
-  }
-});
-
-/* ---------- edit/delete button handlers ---------- */
-function onEditClick(e){
-  e.stopPropagation();
-  const id = e.currentTarget.getAttribute('data-edit');
-  if(!id) return;
-  editingId = id;
-  // find item — if server-paged, search filtered; otherwise search categories
-  const source = (serverNext || serverPrev) ? filtered : categories;
-  const item = (source || []).find(x => String(x.id) === String(id));
-  openEdit(item);
-}
-
-function onDelClick(e){
-  e.stopPropagation();
-  const id = e.currentTarget.getAttribute('data-del');
-  if(!id) return;
-  deletingId = id;
-  document.getElementById('delName').textContent = (categories.find(c=>String(c.id)===String(id)) || {}).name || '';
-  showModal('delModal');
-}
-
-/* ---------- delete confirm ---------- */
-['delClose','delCancel'].forEach(id => {
-  const el = document.getElementById(id);
-  if(el) el.addEventListener('click', ()=> hideModal('delModal'));
-});
-
-document.getElementById('delConfirm').addEventListener('click', async ()=>{
-  if(!deletingId) return;
-  const btn = document.getElementById('delConfirm');
-  btn.disabled = true;
-  const txt = btn.textContent;
-  btn.textContent = 'Deleting...';
-  try{
-    await apiFetch(API_BASE + deletingId + '/', { method: 'DELETE' });
-    // reload current page (server or client)
-    await loadCategories(lastLoadedUrl || API_BASE);
-    hideModal('delModal');
-    deletingId = null;
-  } catch(err){
-    console.error(err);
-    alert('Delete failed — check console for details');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = txt;
-  }
-});
-
-/* ---------- pagination controls ---------- */
-['prevPage','prevPageBottom'].forEach(id => {
-  const el = document.getElementById(id);
-  if(!el) return;
-  el.addEventListener('click', async ()=>{
-    if(serverPrev){
-      // server-provided URL (absolute or relative)
-      await loadCategories(serverPrev);
-    } else {
-      if(currentPage > 1){
-        currentPage--;
-        renderTable();
-        updatePaginationButtons();
-      }
-    }
+async function loadCategories(){
+  const r=await fetch(API_CATEGORIES);
+  categories=await r.json();
+  categoryBody.innerHTML='';
+  categories.forEach(c=>{
+    const dept=c.department?.name||'-';
+    const cls=badgeClass(dept);
+    categoryBody.innerHTML+=`
+      <tr>
+        <td>${c.id}</td>
+        <td>${c.name}</td>
+        <td>
+          <span class="badge ${cls}">
+            <i data-lucide="circle-dot" class="w-3 h-3"></i>${dept}
+          </span>
+        </td>
+        <td class="text-right">
+          <button onclick="editCat(${c.id})"><i data-lucide="edit"></i></button>
+          <button onclick="delCat(${c.id})"><i data-lucide="trash"></i></button>
+        </td>
+      </tr>`;
   });
-});
-['nextPage','nextPageBottom'].forEach(id => {
-  const el = document.getElementById(id);
-  if(!el) return;
-  el.addEventListener('click', async ()=>{
-    if(serverNext){
-      await loadCategories(serverNext);
-    } else {
-      const max = Math.ceil((filtered.length || 0) / pageSize) || 1;
-      if(currentPage < max){
-        currentPage++;
-        renderTable();
-        updatePaginationButtons();
-      }
-    }
+  lucide.createIcons();
+}
+
+modalSave.onclick=async()=>{
+  const payload={name:categoryName.value,department:categoryDept.value};
+  await fetch(API_CATEGORIES,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-CSRFToken':getCookie('csrftoken')},
+    body:JSON.stringify(payload)
   });
-});
+  hideModal();loadCategories();
+}
 
-/* ---------- search input ---------- */
-document.getElementById('searchBox').addEventListener('input', e => {
-  const q = (e.target.value || '').trim().toLowerCase();
-  // if server pagination active, do client-side filter on current page items only
-  if(serverNext || serverPrev){
-    filtered = q ? (categories.filter(c => {
-      const name = (typeof c.name === 'object' ? (c.name.name || '') : (c.name || ''));
-      const dept = (typeof c.department === 'object' ? (c.department.name || '') : (c.department || ''));
-      return (String(name)+' '+String(dept)).toLowerCase().includes(q);
-    })) : categories.slice();
-    renderTable();
-    updatePaginationButtons();
-  } else {
-    filtered = q ? categories.filter(c => {
-      const name = (typeof c.name === 'object' ? (c.name.name || '') : (c.name || ''));
-      const dept = (typeof c.department === 'object' ? (c.department.name || '') : (c.department || ''));
-      return (String(name)+' '+String(dept)).toLowerCase().includes(q);
-    }) : categories.slice();
-    currentPage = 1;
-    renderTable();
-    updatePaginationButtons();
-  }
-});
+function editCat(id){
+  const c=categories.find(x=>x.id===id);
+  editingId=id;
+  categoryName.value=c.name;
+  categoryDept.value=c.department.id;
+  showModal();
+}
 
-/* ---------- initial load ---------- */
-loadCategories();
+function delCat(id){
+  if(confirm('Delete category?'))
+    fetch(API_CATEGORIES+id+'/',{method:'DELETE',headers:{'X-CSRFToken':getCookie('csrftoken')}})
+    .then(loadCategories);
+}
 
-/* create lucide icons for static parts immediately (header/sidebar etc.) */
-if(window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
+function getCookie(n){
+  return document.cookie.split('; ').find(r=>r.startsWith(n+'='))?.split('=')[1];
+}
+
+loadDepartments();loadCategories();
 </script>
-<script>lucide.createIcons();</script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

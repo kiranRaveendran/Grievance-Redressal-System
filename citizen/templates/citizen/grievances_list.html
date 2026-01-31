@@ -2,154 +2,295 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>My Grievances</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>My Grievances</title>
 
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <link rel="icon" href="{% static 'images/favicon.ico' %}">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="icon" href="{% static 'images/favicon.ico' %}">
 
-  <style>
-    :root{
-      --bg-start:#0f172a; --bg-end:#020617;
-      --accent:#4f46e5; --accent-dark:#4338ca;
-      --warn:#f97316; --success:#22c55e; --danger:#ef4444;
-      --text-high:#e6eef3; --text-muted:#a8bbc6;
-      --hover-card:#1e293b;
-    }
+<style>
+:root{
+  --bg-start:#0f172a;
+  --bg-end:#020617;
+  --primary:#4f46e5;
+  --primary-dark:#4338ca;
+  --success:#22c55e;
+  --warning:#f97316;
+  --danger:#ef4444;
+  --info:#3b82f6;
+  --text-high:#e6eef3;
+  --text-muted:#a8bbc6;
+}
 
-    html,body{height:100%; margin:0; font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto;}
-    body{ background:linear-gradient(135deg,var(--bg-start),var(--bg-end)); color:var(--text-high); overflow:hidden; }
+/* Base */
+html,body{
+  margin:0;
+  height:100%;
+  font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto;
+  background:linear-gradient(135deg,var(--bg-start),var(--bg-end));
+  color:var(--text-high);
+  overflow:hidden;
+}
 
-    .app { display:flex; height:100vh; width:100vw; }
-    aside.sidebar { width:260px; padding:28px; background:linear-gradient(180deg,#0f172a,#1e293b); border-right:1px solid rgba(255,255,255,0.05);}
-    main.content { flex:1; padding:24px; display:flex; flex-direction:column; gap:20px; overflow-y:auto; }
+/* Layout */
+.app{
+  display:flex;
+  height:100vh;
+  width:100vw;
+}
 
-    .glass{background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); box-shadow:0 12px 28px rgba(2,6,23,0.6); backdrop-filter: blur(10px); border-radius:12px; transition: all 0.3s;}
-    .glass:hover{transform: translateY(-3px); background: rgba(255,255,255,0.05);}
+/* Sidebar */
+aside.sidebar{
+  width:260px;
+  background:linear-gradient(180deg,#0f172a,#1e293b);
+  border-right:1px solid rgba(255,255,255,.06);
+  padding:24px;
+  position:fixed;
+  top:0;
+  left:0;
+  height:100vh;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+}
 
-    nav a { display:flex; gap:.6rem; align-items:center; padding:.6rem .8rem; border-radius:.5rem; color:var(--text-high); text-decoration:none; margin-bottom:.3rem; font-weight:500; transition: all 0.25s; }
-    nav a:hover { background: linear-gradient(90deg,var(--accent),var(--accent-dark)); color:white; transform: translateX(4px); }
+.brand{
+  display:flex;
+  align-items:center;
+  gap:.75rem;
+  margin-bottom:2rem;
+}
+.brand img{
+  width:44px;
+  height:44px;
+  border-radius:.5rem;
+}
+.brand-title{
+  font-weight:700;
+}
 
-    .topbar { display:flex; align-items:center; justify-content:space-between; padding:14px; gap:12px; }
-    .topbar button { padding:.5rem 1rem; border-radius:8px; background: linear-gradient(90deg,var(--accent),var(--accent-dark)); color:white; font-weight:500; transition: transform 0.2s; }
-    .topbar button:hover{ transform: translateY(-2px); }
+.sidebar nav a{
+  display:flex;
+  align-items:center;
+  gap:.7rem;
+  padding:.7rem 1rem;
+  border-radius:.7rem;
+  font-weight:500;
+  text-decoration:none;
+  color:var(--text-high);
+  transition:.25s;
+}
+.sidebar nav a:hover{
+  background:linear-gradient(90deg,var(--primary),var(--primary-dark));
+  transform:translateX(5px);
+}
 
-    .metrics { display:grid; grid-template-columns: repeat(5, 1fr); gap:18px; }
-    .metrics .card { padding:20px; border-radius:16px; display:flex; justify-content:space-between; align-items:center; background:linear-gradient(135deg,var(--accent),var(--accent-dark)); color:white; cursor:pointer; transition: all 0.25s; }
-    .metrics .card i { font-size:1.8rem; opacity:0.85; }
+.user-box{
+  font-size:.85rem;
+  color:var(--text-muted);
+}
+.user-box strong{color:var(--text-high);}
 
-    .status-badge{ padding:.2rem .5rem; border-radius:9999px; font-size:.75rem; font-weight:600; display:inline-block; }
-    .status-new{ background: linear-gradient(90deg,#f59e0b,#f97316); color:white; }
-    .status-in_progress{ background: linear-gradient(90deg,#3b82f6,#1e40af); color:white; }
-    .status-resolved{ background: linear-gradient(90deg,#22c55e,#16a34a); color:white; }
-    .status-escalated{ background: linear-gradient(90deg,#ef4444,#b91c1c); color:white; }
+/* Main */
+main.content{
+  margin-left:260px;
+  padding:24px;
+  flex:1;
+  overflow-y:auto;
+  display:flex;
+  flex-direction:column;
+  gap:20px;
+}
 
-    .table-wrapper { overflow:auto; border-radius:12px; background:rgba(255,255,255,0.02); flex:1; }
-    table { width:100%; border-collapse:collapse; }
-    thead th{ color:var(--text-muted); font-size:.85rem; padding:.75rem; text-align:left; border-bottom:1px solid rgba(255,255,255,0.06); background:rgba(0,0,0,0.2); position:sticky; top:0; }
-    tbody td{ padding:.65rem; border-bottom:1px solid rgba(255,255,255,0.04); vertical-align:middle; }
-    tbody tr:hover{ background:rgba(255,255,255,0.06); transform: translateX(2px); transition: all 0.2s; }
+/* Topbar */
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  background:rgba(255,255,255,.05);
+  padding:16px 20px;
+  border-radius:14px;
+  backdrop-filter:blur(10px);
+}
+.topbar h1{
+  font-size:1.5rem;
+  font-weight:700;
+}
+.topbar button{
+  padding:.5rem 1.2rem;
+  border-radius:.75rem;
+  background:linear-gradient(90deg,var(--primary),var(--primary-dark));
+  font-weight:600;
+  transition:.25s;
+}
+.topbar button:hover{transform:translateY(-2px);}
 
-    .btn-view{ background: linear-gradient(90deg,var(--accent),var(--accent-dark)); color:white; padding:.3rem .6rem; border-radius:.5rem; font-size:.85rem; transition: all 0.2s; }
-    .btn-view:hover{ transform: translateY(-2px); box-shadow:0 6px 18px rgba(0,0,0,0.4); }
-  </style>
+/* Metrics */
+.metrics{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:16px;
+}
+.metric{
+  padding:18px;
+  border-radius:16px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  color:white;
+  box-shadow:0 12px 30px rgba(0,0,0,.45);
+}
+.metric i{opacity:.85;}
+.m-total{background:linear-gradient(135deg,#6366f1,#4338ca);}
+.m-new{background:linear-gradient(135deg,#f59e0b,#f97316);}
+.m-progress{background:linear-gradient(135deg,#3b82f6,#1e40af);}
+.m-resolved{background:linear-gradient(135deg,#22c55e,#16a34a);}
+.m-escalated{background:linear-gradient(135deg,#ef4444,#b91c1c);}
+
+/* Table */
+.table-card{
+  background:rgba(255,255,255,.03);
+  border-radius:16px;
+  padding:16px;
+  backdrop-filter:blur(10px);
+}
+.table-wrapper{
+  overflow:auto;
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+thead th{
+  font-size:.85rem;
+  color:var(--text-muted);
+  padding:.75rem;
+  text-align:left;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+tbody td{
+  padding:.7rem;
+  border-bottom:1px solid rgba(255,255,255,.05);
+}
+tbody tr:hover{
+  background:rgba(255,255,255,.06);
+}
+
+/* Status */
+.badge{
+  padding:.25rem .6rem;
+  border-radius:999px;
+  font-size:.75rem;
+  font-weight:600;
+  color:white;
+}
+.status-new{background:linear-gradient(90deg,#f59e0b,#f97316);}
+.status-in_progress{background:linear-gradient(90deg,#3b82f6,#1e40af);}
+.status-resolved{background:linear-gradient(90deg,#22c55e,#16a34a);}
+.status-escalated{background:linear-gradient(90deg,#ef4444,#b91c1c);}
+
+.btn-view{
+  padding:.35rem .7rem;
+  border-radius:.5rem;
+  background:linear-gradient(90deg,var(--primary),var(--primary-dark));
+  font-size:.85rem;
+  font-weight:600;
+}
+
+/* Responsive */
+@media(max-width:1024px){
+  aside.sidebar{display:none;}
+  main.content{margin-left:0;}
+}
+</style>
 </head>
+
 <body>
 <div class="app">
 
-  <!-- SIDEBAR -->
-  <aside class="sidebar glass">
-    <div class="brand mb-6">
-      <img src="{% static 'images/favicon.ico' %}" class="w-10 h-10" alt="logo">
-      <div style="font-weight:700;">Citizen</div>
-      <div class="text-sm text-slate-400">Dashboard</div>
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div>
+    <div class="brand">
+      <img src="{% static 'images/favicon.ico' %}">
+      <div>
+        <div class="brand-title">Citizen</div>
+        <div class="text-sm text-slate-400">Portal</div>
+      </div>
     </div>
+
     <nav>
-      <a href="{% url 'citizen:dashboard' %}"><i data-lucide="home" class="w-4 h-4"></i> Dashboard</a>
-      <a href="{% url 'citizen:grievances_list' %}"><i data-lucide="file-text" class="w-4 h-4"></i> My Grievances</a>
-      <a href="{% url 'citizen:submit_grievance' %}"><i data-lucide="plus-circle" class="w-4 h-4"></i> Submit Grievance</a>
-      <a href="{% url 'citizen:notifications' %}"><i data-lucide="bell" class="w-4 h-4"></i> Notifications</a>
-      <a href="{% url 'citizen:profile' %}"><i data-lucide="user" class="w-4 h-4"></i> Profile</a>
+      <a href="{% url 'citizen:dashboard' %}"><i data-lucide="home"></i> Dashboard</a>
+      <a href="{% url 'citizen:grievances_list' %}"><i data-lucide="file-text"></i> My Grievances</a>
+      <a href="{% url 'citizen:submit_grievance' %}"><i data-lucide="plus-circle"></i> Submit Grievance</a>
+      <a href="{% url 'citizen:profile' %}"><i data-lucide="user"></i> Profile</a>
     </nav>
-  </aside>
+  </div>
 
-  <!-- MAIN -->
-  <main class="content">
-    <div class="topbar glass">
-      <div class="text-xl font-semibold">My Grievances</div>
-      <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}
-        <button type="submit">Logout</button>
-      </form>
-    </div>
+  <div class="user-box">
+    Logged in as<br>
+    <strong>{{ request.user.username }}</strong>
+  </div>
+</aside>
 
-    <!-- METRICS -->
-    <div class="metrics">
-      <div class="card">
-        <div>Total</div>
-        <div class="text-2xl font-bold">{{ total_grievances }}</div>
-        <i data-lucide="list"></i>
-      </div>
-      <div class="card" style="background:linear-gradient(135deg,#f59e0b,#f97316)">
-        <div>New</div>
-        <div class="text-2xl font-bold">{{ new_grievances }}</div>
-        <i data-lucide="clock"></i>
-      </div>
-      <div class="card" style="background:linear-gradient(135deg,#3b82f6,#1e40af)">
-        <div>In Progress</div>
-        <div class="text-2xl font-bold">{{ in_progress_grievances }}</div>
-        <i data-lucide="refresh-cw"></i>
-      </div>
-      <div class="card" style="background:linear-gradient(135deg,#22c55e,#16a34a)">
-        <div>Resolved</div>
-        <div class="text-2xl font-bold">{{ resolved_grievances }}</div>
-        <i data-lucide="check-circle"></i>
-      </div>
-      <div class="card" style="background:linear-gradient(135deg,#ef4444,#b91c1c)">
-        <div>Escalated</div>
-        <div class="text-2xl font-bold">{{ escalated_grievances }}</div>
-        <i data-lucide="alert-circle"></i>
-      </div>
-    </div>
+<!-- Main -->
+<main class="content">
 
-    <!-- GRIEVANCES TABLE -->
-    <div class="glass p-4 mt-4">
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Tracking ID</th>
-              <th>Title</th>
-              <th>Status</th>
-              <th>Category</th>
-              <th>Created</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% if grievances %}
-              {% for g in grievances %}
-                <tr>
-                  <td>{{ g.tracking_id }}</td>
-                  <td>{{ g.title }}</td>
-                  <td><span class="status-badge status-{{ g.status }}">{{ g.status|capfirst }}</span></td>
-                  <td>{% if g.category %}{{ g.category.name }}{% else %}-{% endif %}</td>
-                  <td>{{ g.created_at|date:"M d, Y" }}</td>
-                  <td><a href="{% url 'citizen:grievance_detail' g.id %}" class="btn-view">View</a></td>
-                </tr>
-              {% endfor %}
-            {% else %}
-              <tr><td colspan="6" class="text-center text-slate-400 py-4">No grievances submitted yet.</td></tr>
-            {% endif %}
-          </tbody>
-        </table>
-      </div>
-    </div>
+<!-- Topbar -->
+<div class="topbar">
+  <h1>My Grievances</h1>
+  <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}
+    <button type="submit">Logout</button>
+  </form>
+</div>
 
-  </main>
+<!-- Metrics -->
+<div class="metrics">
+  <div class="metric m-total"><div>Total<br><strong>{{ total_grievances }}</strong></div><i data-lucide="list"></i></div>
+  <div class="metric m-new"><div>New<br><strong>{{ new_grievances }}</strong></div><i data-lucide="clock"></i></div>
+  <div class="metric m-progress"><div>In Progress<br><strong>{{ in_progress_grievances }}</strong></div><i data-lucide="refresh-cw"></i></div>
+  <div class="metric m-resolved"><div>Resolved<br><strong>{{ resolved_grievances }}</strong></div><i data-lucide="check-circle"></i></div>
+  <div class="metric m-escalated"><div>Escalated<br><strong>{{ escalated_grievances }}</strong></div><i data-lucide="alert-circle"></i></div>
+</div>
+
+<!-- Table -->
+<div class="table-card">
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Tracking ID</th>
+          <th>Title</th>
+          <th>Status</th>
+          <th>Category</th>
+          <th>Created</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for g in grievances %}
+        <tr>
+          <td>{{ g.tracking_id }}</td>
+          <td>{{ g.title }}</td>
+          <td><span class="badge status-{{ g.status }}">{{ g.status|capfirst }}</span></td>
+          <td>{{ g.category.name|default:"-" }}</td>
+          <td>{{ g.created_at|date:"M d, Y" }}</td>
+          <td><a class="btn-view" href="{% url 'citizen:grievance_detail' g.id %}">View</a></td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6" class="text-center text-slate-400 py-4">No grievances found.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</main>
 </div>
 
 <script>lucide.createIcons();</script>
 </body>
 </html>
+

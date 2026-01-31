@@ -1,0 +1,204 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Submit Feedback</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<style>
+html, body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0f172a, #020617);
+  color: #e5e7eb;
+  font-family: Inter, system-ui;
+}
+
+.app {
+  display: flex;
+  height: 100vh;
+}
+
+/* SIDEBAR */
+.sidebar {
+  width: 260px;
+  background: linear-gradient(180deg, #0f172a, #1e293b);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.sidebar a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  color: white;
+  text-decoration: none;
+}
+
+.sidebar a:hover {
+  background: linear-gradient(90deg, #4f46e5, #4338ca);
+}
+
+/* MAIN */
+.content {
+  flex: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* TOP BAR */
+.topbar {
+  background: rgba(255,255,255,0.05);
+  padding: 14px 18px;
+  border-radius: 14px;
+  margin-bottom: 20px;
+}
+
+/* CARD */
+.card {
+  background: rgba(255,255,255,0.05);
+  border-radius: 18px;
+  padding: 28px;
+  width: 520px;
+  margin: auto;
+}
+
+label {
+  font-weight: 600;
+  color: #94a3b8;
+  display: block;
+  margin-bottom: 6px;
+}
+
+textarea {
+  width: 100%;
+  background: #020617;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 12px;
+  resize: none;
+  color: white;
+}
+
+.star {
+  font-size: 32px;
+  cursor: pointer;
+  color: #334155;
+}
+
+.star.active {
+  color: #facc15;
+}
+
+.btn {
+  margin-top: 16px;
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  background: linear-gradient(90deg,#4f46e5,#4338ca);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div>
+    <div class="flex items-center gap-3 mb-8">
+      <img src="{% static 'images/favicon.ico' %}" width="42">
+      <div>
+        <div class="font-bold">Citizen Portal</div>
+        <div class="text-sm text-slate-400">Feedback</div>
+      </div>
+    </div>
+
+    <nav class="space-y-1">
+      <a href="{% url 'citizen:dashboard' %}"><i data-lucide="home"></i>Dashboard</a>
+      <a href="{% url 'citizen:grievances_list' %}"><i data-lucide="file-text"></i>My Grievances</a>
+      <a href="{% url 'citizen:submit_grievance' %}">
+        <i data-lucide="plus-circle"></i>Submit Grievance
+      </a>
+      <a href="{% url 'citizen:profile' %}"><i data-lucide="user"></i>Profile</a>
+    </nav>
+  </div>
+
+  <div class="text-sm text-slate-400">
+    Logged in as<br>
+    <strong class="text-white">{{ request.user.username }}</strong>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="content">
+
+<div class="topbar">
+  <h1 class="text-xl font-bold">Submit Feedback</h1>
+</div>
+
+<div class="card">
+  <form method="post">
+    {% csrf_token %}
+
+    <!-- STAR RATING -->
+    <label>Rating</label>
+    <div class="flex gap-2 mb-4" id="stars">
+      {% for i in "12345" %}
+        <span class="star" data-value="{{ forloop.counter }}">★</span>
+      {% endfor %}
+    </div>
+
+    <!-- HIDDEN DJANGO FIELD -->
+    <input type="hidden" name="rating" id="ratingInput">
+
+    <!-- COMMENTS -->
+    <label>Comments</label>
+    <textarea name="comments" rows="4" placeholder="Write your feedback..."></textarea>
+
+    <button class="btn" type="submit">
+      <i data-lucide="send"></i> Submit Feedback
+    </button>
+  </form>
+</div>
+
+</main>
+</div>
+
+<script>
+lucide.createIcons();
+
+const stars = document.querySelectorAll('.star');
+const ratingInput = document.getElementById('ratingInput');
+
+stars.forEach(star => {
+  star.addEventListener('click', () => {
+    const value = star.dataset.value;
+    ratingInput.value = value;
+
+    stars.forEach(s => {
+      s.classList.toggle('active', s.dataset.value <= value);
+    });
+  });
+});
+</script>
+
+</body>
+</html>
+
+

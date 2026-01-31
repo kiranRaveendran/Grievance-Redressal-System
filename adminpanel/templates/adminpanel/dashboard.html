@@ -1,694 +1,317 @@
 {% load static %}
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Admin — Dashboard</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin Dashboard</title>
 
-  <!-- Tailwind CDN (dev) -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Lucide icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Lucide icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
 
-  <link rel="icon" href="{% static 'images/favicon.ico' %}">
+<link rel="icon" href="{% static 'images/favicon.ico' %}">
 
-  <style>
-    :root{
-      --bg-start:#071124; --bg-end:#072f2e;
-      --brand:#0ea5a4; --brand-dark:#0b8f8b;
-      --accent:#4f46e5;
-      --text-high:#e6eef3; --text-muted:#a8bbc6;
-    }
-    html,body{height:100%; margin:0; font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto;}
-    body{
-      background:linear-gradient(180deg,var(--bg-start),var(--bg-end));
-      color:var(--text-high);
-      overflow:hidden; /* Prevent page scrolling */
-    }
+<style>
+:root{
+  --bg-dark:#0f172a;
+  --brand:#0ea5a4;
+  --accent:#7c3aed;
+  --text-primary:#e5e7eb;
+  --text-muted:#94a3b8;
+}
 
-    /* layout */
-    .app { display:flex; height:100vh; width:100vw; }
-    aside.sidebar { width:280px; padding:28px; box-sizing:border-box; }
-    main.content { flex:1; padding:20px 28px; box-sizing:border-box; display:flex; flex-direction:column; gap:18px; }
+/* Full-page layout */
+body, html { margin:0; padding:0; height:100%; overflow:hidden; font-family:'Inter',system-ui,sans-serif; }
 
-    /* glass */
-    .glass{
-      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-      border: 1px solid rgba(255,255,255,0.05);
-      box-shadow: 0 8px 28px rgba(2,6,23,0.45);
-      backdrop-filter: blur(6px);
-      border-radius:.75rem;
-    }
+/* Animated Gradient Background */
+body {
+  position: relative;
+  background: linear-gradient(-45deg, #0f172a, #1e293b, #0f172a, #1e293b);
+  background-size: 400% 400%;
+  animation: gradientBG 20s ease infinite;
+  display: flex;
+  color: var(--text-primary);
+}
 
-    /* sidebar */
-    .sidebar .brand { display:flex; gap:.75rem; align-items:center; margin-bottom:18px; }
-    .sidebar .brand img{ width:44px; height:44px; border-radius:.5rem; }
-    .sidebar nav a { display:flex; gap:.6rem; align-items:center; padding:.5rem .6rem; border-radius:.5rem; color:var(--text-high); text-decoration:none; margin-bottom:.25rem; }
-    .sidebar nav a:hover { background: rgba(255,255,255,0.03); }
+/* Background animation */
+@keyframes gradientBG {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
 
-    /* topbar */
-    .topbar { display:flex; align-items:center; justify-content:space-between; padding:14px; gap:12px; }
-    .topbar .left { display:flex; gap:12px; align-items:center; }
-    .topbar .search { display:flex; gap:8px; align-items:center; }
+/* Floating circles */
+body::before {
+  content:'';
+  position:absolute;
+  width:120vw;
+  height:120vh;
+  background:radial-gradient(circle at 20% 30%, rgba(14,165,164,0.15), transparent 60%), radial-gradient(circle at 80% 70%, rgba(124,58,237,0.15), transparent 60%);
+  top: -10vh;
+  left:-10vw;
+  z-index:0;
+  animation: floatShapes 25s linear infinite alternate;
+}
 
-    .search-input{ background: rgba(255,255,255,0.03); color:var(--text-high); border:1px solid rgba(255,255,255,0.04); padding:.45rem .6rem; border-radius:.375rem; min-width:320px; }
-    .btn-primary{ background:linear-gradient(90deg,var(--brand),var(--brand-dark)); color:white; padding:.45rem .7rem; border-radius:.5rem; display:inline-flex; gap:.4rem; align-items:center; }
-    .btn-accent{ background:linear-gradient(90deg,var(--accent),#7c3aed); color:white; padding:.45rem .7rem; border-radius:.5rem; display:inline-flex; gap:.4rem; align-items:center; }
+@keyframes floatShapes {
+  0%{ transform: translate(0,0) rotate(0deg); }
+  50%{ transform: translate(20px, 30px) rotate(45deg); }
+  100%{ transform: translate(-20px, 20px) rotate(-30deg); }
+}
 
-    /* layout cards + panels */
-    .metrics { display:grid; grid-template-columns: repeat(4, 1fr); gap:14px; }
-    .metrics .card { padding:16px; border-radius:12px; display:flex; justify-content:space-between; align-items:center; }
-    .main-grid { display:grid; grid-template-columns: 2fr 1fr; gap:14px; flex:1; min-height:0; } /* min-height:0 to allow internal scroll areas */
+/* Sidebar */
+.sidebar {
+  position: relative; z-index:10;
+  width: 280px;
+  padding: 2rem 1.5rem;
+  display: flex; flex-direction: column; gap: 2rem;
+  backdrop-filter: blur(12px);
+  background: rgba(15,23,42,0.6);
+  border-radius: 1rem;
+}
 
-    /* table area: internal scrolling only */
-    .grievances-panel { padding:14px; border-radius:12px; display:flex; flex-direction:column; min-height:0; }
-    .filters { display:flex; gap:8px; align-items:center; margin-bottom:10px; flex-wrap:wrap; }
-    /* dark-select / fallback looks */
-    select.dark { background:#07191b; color:var(--text-high); border:1px solid rgba(255,255,255,0.06); padding:.4rem .6rem; border-radius:.375rem; }
+/* Sidebar brand & nav */
+.sidebar .brand { display: flex; align-items:center; gap:0.75rem; }
+.sidebar .brand img { width:44px; height:44px; border-radius:0.5rem; }
+.sidebar nav a {
+  display:flex; align-items:center; gap:0.75rem;
+  padding:0.5rem 0.75rem; border-radius:0.5rem;
+  color: var(--text-primary); font-weight:500; text-decoration:none;
+  transition: all 0.3s ease;
+}
+.sidebar nav a:hover {
+  background: linear-gradient(90deg, var(--brand), var(--accent));
+  color: #fff;
+  transform: translateX(4px);
+}
+.sidebar-active {
+  background: linear-gradient(90deg, var(--brand), var(--accent));
+  color:#fff;
+  font-weight:600;
+}
 
-    .table-wrapper { overflow:auto; border-radius:8px; background:transparent; flex:1; } /* internal scroll only */
-    table { width:100%; border-collapse:collapse; }
-    thead th{ color:var(--text-muted); font-size:.85rem; padding:.75rem; text-align:left; border-bottom:1px solid rgba(255,255,255,0.04); position:sticky; top:0; background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.01)); }
-    tbody td{ padding:.6rem; border-bottom:1px solid rgba(255,255,255,0.03); vertical-align:middle; }
+/* Main content */
+.main-content { flex:1; display:flex; flex-direction:column; position:relative; z-index:10; }
 
-    /* analytics panel */
-    .analytics-panel { padding:14px; border-radius:12px; display:flex; flex-direction:column; gap:12px; min-height:0; }
-    .analytics-panel .chart-wrap { flex:1; min-height:160px; display:flex; align-items:center; justify-content:center; }
+/* Topbar */
+.topbar {
+  display:flex; justify-content:flex-end; align-items:center;
+  padding:1rem 2rem; gap:1rem;
+  backdrop-filter: blur(12px);
+  background: rgba(15,23,42,0.5);
+  border-radius:1rem;
+}
 
-    /* compact UI */
-    .muted { color:var(--text-muted); font-size:.9rem; }
-    .text-high { color:var(--text-high); }
+/* Logout */
+.btn-logout {
+  display:flex; align-items:center; gap:0.5rem;
+  background: linear-gradient(90deg, var(--accent), var(--brand));
+  padding:0.5rem 1rem; border-radius:0.5rem; font-weight:600;
+  transition: all 0.3s ease;
+}
+.btn-logout:hover { transform: translateY(-2px); box-shadow:0 6px 20px rgba(0,0,0,0.5); }
 
-    /* custom select components (to avoid native white popup) */
-    .cs-wrapper { display:inline-block; position:relative; min-width:140px; }
-    .cs-btn { display:flex; align-items:center; justify-content:space-between; gap:.5rem; padding:.4rem .65rem; border-radius:.35rem; background:linear-gradient(180deg,#07191b,#052225); color:var(--text-high); border:1px solid rgba(255,255,255,0.06); cursor:pointer; }
-    .cs-list { position:absolute; left:0; right:0; margin-top:.3rem; max-height:260px; overflow:auto; background:#07191b; border-radius:.5rem; border:1px solid rgba(255,255,255,0.06); z-index:1400; box-shadow:0 8px 32px rgba(0,0,0,0.6); }
-    .cs-item { padding:.45rem .7rem; cursor:pointer; color:var(--text-high); }
-    .cs-item:hover, .cs-item[aria-selected="true"] { background: rgba(255,255,255,0.03); }
+/* Greeting */
+.greeting {
+  background: linear-gradient(135deg, var(--brand), var(--accent));
+  color:#fff;
+  padding:1.5rem;
+  border-radius:1rem;
+  box-shadow:0 10px 28px rgba(0,0,0,0.5);
+  margin:1rem 2rem;
+}
 
-    /* small screens: collapse sidebar */
-    @media(max-width:1024px){
-      aside.sidebar { display:none; }
-      .app { padding-left:0; }
-      main.content { padding:12px; }
-      .metrics { grid-template-columns: repeat(2, 1fr); }
-      .main-grid { grid-template-columns: 1fr; }
-    }
-  </style>
+/* Metrics */
+.metrics {
+  display:grid; grid-template-columns: repeat(4,1fr);
+  gap:1rem; margin:1rem 2rem;
+}
+.metric-card {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:1rem; border-radius:0.75rem;
+  background: rgba(255,255,255,0.05);
+  transition: all 0.3s ease;
+}
+.metric-card:hover {
+  transform: translateY(-3px);
+  box-shadow:0 12px 24px rgba(0,0,0,0.4);
+  background: linear-gradient(135deg, var(--brand), var(--accent));
+}
+.metric-card i { font-size:2rem; }
+</style>
 </head>
+
 <body>
-<div class="app">
-  <!-- SIDEBAR -->
-  <aside class="sidebar glass" role="navigation" aria-label="Sidebar">
-    <div class="brand">
-      <img src="{% static 'images/favicon.ico' %}" alt="logo">
-      <div>
-        <div style="font-weight:700;">Grievance Admin</div>
-        <div class="muted" style="font-size:.8rem;">Control center</div>
-      </div>
-    </div>
 
-    <nav>
-    <a href="{% url 'adminpanel:dashboard' %}"><i data-lucide="home" class="w-4 h-4"></i> Dashboard</a>
-    <a href="{% url 'adminpanel:grievances_list' %}"><i data-lucide="file-text" class="w-4 h-4"></i> Grievances</a>
-    <a href="{% url 'adminpanel:analytics' %}"><i data-lucide="bar-chart-2" class="w-4 h-4"></i> Analytics</a>
-    <a href="{% url 'adminpanel:users' %}"><i data-lucide="users" class="w-4 h-4"></i> Users</a>
-    <a href="{% url 'adminpanel:categories' %}"><i data-lucide="tag" class="w-4 h-4"></i> Categories</a>
-    <!-- NEW -->
-    <a href="{% url 'adminpanel:settings' %}"><i data-lucide="sliders" class="w-4 h-4"></i> Settings</a>
+<!-- Sidebar -->
+<aside class="sidebar glass">
+  <div class="brand">
+    <img src="{% static 'images/favicon.ico' %}" alt="logo">
+    <div>
+      <div class="font-bold text-lg">Grievance Admin</div>
+      <div class="text-sm text-muted">Control Panel</div>
+    </div>
+  </div>
+
+  <nav>
+    <a href="{% url 'adminpanel:dashboard' %}" class="sidebar-active"><i data-lucide="home"></i> Dashboard</a>
+    <a href="{% url 'adminpanel:grievances_list' %}"><i data-lucide="file-text"></i> Grievances</a>
+    <a href="{% url 'adminpanel:analytics' %}"><i data-lucide="bar-chart-2"></i> Analytics</a>
+    <a href="{% url 'adminpanel:users' %}"><i data-lucide="users"></i> Users</a>
+    <a href="{% url 'adminpanel:categories' %}"><i data-lucide="tag"></i> Categories</a>
+    <a href="{% url 'adminpanel:settings' %}"><i data-lucide="settings"></i> Settings</a>
   </nav>
+</aside>
 
-    <div style="margin-top:18px;font-size:.85rem;" class="muted">
-      <div>Logged in as</div>
-      <div style="font-weight:600;">{% if request.user.is_authenticated %}{{ request.user.username }}{% else %}Guest{% endif %}</div>
-    </div>
-  </aside>
+<!-- Main Content -->
+<div class="main-content flex-1">
 
-  <!-- MAIN -->
-  <main class="content">
-    <!-- TOPBAR -->
-    <div class="topbar glass">
-      <div class="left">
-        <button id="mobileToggle" class="btn-accent" style="display:none;"><i data-lucide="menu"></i></button>
-        <div style="font-size:1.15rem;font-weight:600;">Dashboard</div>
+  <!-- Topbar -->
+  <div class="topbar glass">
+    <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}
+      <button type="submit" class="btn-logout">
+        <i data-lucide="log-out"></i> Sign Out
+      </button>
+    </form>
+  </div>
 
-        <div class="search" style="margin-left:12px;">
-          <input id="searchTop" class="search-input" placeholder="Search grievances or users..." aria-label="Search"/>
-          <button id="searchBtn" class="btn-primary">Search</button>
-        </div>
+  <!-- Greeting -->
+  <div class="greeting">
+    <h2 class="text-2xl font-bold">Welcome back, {{ request.user.username }} 👋</h2>
+    <p class="mt-1 text-white/80">Review the metrics below to keep track of system activity.</p>
+  </div>
+
+  <!-- Metrics -->
+  <div class="metrics">
+    <div class="metric-card glass">
+      <div>
+        <div class="text-muted text-sm">Total Grievances</div>
+        <div id="total" class="text-xl font-bold mt-1">0</div>
       </div>
-
-      <div style="display:flex;gap:10px;align-items:center;">
-        <button id="exportBtn" class="btn-accent"><i data-lucide="download"></i> Export</button>
-        <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button type="submit" class="btn-primary">Sign out</button></form>
-      </div>
-    </div>
-
-    <!-- METRICS -->
-    <div class="metrics" aria-hidden="false">
-      <div class="card glass">
-        <div>
-          <div class="muted">Total grievances</div>
-          <div id="card-total" style="font-size:1.6rem;font-weight:700;">—</div>
-          <div class="muted" style="font-size:.8rem;">All time</div>
-        </div>
-        <div style="background:rgba(255,255,255,0.04);padding:10px;border-radius:8px;"><i data-lucide="list" class="w-6 h-6"></i></div>
-      </div>
-
-      <div class="card glass">
-        <div>
-          <div class="muted">Invalid</div>
-          <div id="card-open" style="font-size:1.6rem;font-weight:700;">—</div>
-          <div class="muted" style="font-size:.8rem;"></div>
-        </div>
-        <div style="background:rgba(255,255,255,0.04);padding:10px;border-radius:8px;"><i data-lucide="clock" class="w-6 h-6"></i></div>
-      </div>
-
-      <div class="card glass">
-        <div>
-          <div class="muted">Resolved</div>
-          <div id="card-resolved" style="font-size:1.6rem;font-weight:700;">—</div>
-          <div class="muted" style="font-size:.8rem;">Completed</div>
-        </div>
-        <div style="background:rgba(255,255,255,0.04);padding:10px;border-radius:8px;"><i data-lucide="check-circle" class="w-6 h-6"></i></div>
-      </div>
-
-      <div class="card glass">
-        <div>
-          <div class="muted">Avg resolution (days)</div>
-          <div id="card-sla" style="font-size:1.6rem;font-weight:700;">—</div>
-          <div class="muted" style="font-size:.8rem;">SLA</div>
-        </div>
-        <div style="background:rgba(255,255,255,0.04);padding:10px;border-radius:8px;"><i data-lucide="trending-up" class="w-6 h-6"></i></div>
-      </div>
+      <i data-lucide="file-text"></i>
     </div>
 
-    <!-- MAIN GRID -->
-    <div class="main-grid">
-      <!-- LEFT: Grievance list (internal scroll) -->
-      <section class="grievances-panel glass" aria-labelledby="grievance-heading">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-          <div style="display:flex;gap:8px;align-items:center;">
-            <div class="filters" aria-hidden="false">
-              <!-- Native selects are present but will be converted to custom dark selects by converter script -->
-              <select id="filter-status" class="dark" aria-label="Filter status">
-                <option value="">All status</option>
-                <option value="new">New</option>
-                <option value="in_progress">In Progress</option>
-                <option value="resolved">Resolved</option>
-                <option value="escalated">Escalated</option>
-              </select>
-
-              <select id="filter-category" class="dark" aria-label="Filter category">
-                <option value="">All categories</option>
-              </select>
-
-              <select id="page-size" class="dark" aria-label="Page size">
-                <option value="10">10</option>
-                <option value="25" selected>25</option>
-                <option value="50">50</option>
-              </select>
-
-              <button id="applyFilters" class="btn-primary">Apply</button>
-            </div>
-          </div>
-
-          <div class="muted">Showing <span id="page-info">Page 1</span></div>
-        </div>
-
-        <div class="table-wrapper" role="region" aria-live="polite" tabindex="0">
-          <table role="table" aria-label="Grievances">
-            <thead>
-              <tr>
-                <th>ID</th><th>Title</th><th>User</th><th>Category</th><th>Status</th><th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="grievanceTable">
-              <tr><td colspan="6" style="padding:28px;text-align:center;color:var(--text-muted);">Loading grievances…</td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;">
-          <div class="muted">Total: <span id="total-count">—</span></div>
-          <div style="display:flex;gap:8px;">
-            <button id="prevPage" class="btn-accent">Prev</button>
-            <button id="nextPage" class="btn-accent">Next</button>
-            <button id="exportCsv" class="btn-primary">Export CSV</button>
-          </div>
-        </div>
-      </section>
-
-      <!-- RIGHT: Analytics (internal small scroll if needed) -->
-      <aside class="analytics-panel glass" aria-labelledby="analytics-heading">
-        <h3 id="analytics-heading" style="margin:0;font-weight:600;">Analytics</h3>
-
-        <div class="chart-wrap" style="min-height:180px;">
-          <canvas id="statusChart" height="160"></canvas>
-        </div>
-
-        <div>
-          <div class="muted">Top categories</div>
-          <ul id="topCategories" style="margin-top:6px;max-height:120px;overflow:auto;padding-left:16px;"></ul>
-        </div>
-
-        <div>
-
-      </aside>
+    <div class="metric-card glass">
+      <div>
+        <div class="text-muted text-sm">Pending</div>
+        <div id="pending" class="text-xl font-bold mt-1 text-yellow-400">0</div>
+      </div>
+      <i data-lucide="clock"></i>
     </div>
-  </main>
+
+    <div class="metric-card glass">
+      <div>
+        <div class="text-muted text-sm">In Progress</div>
+        <div id="progress" class="text-xl font-bold mt-1 text-teal-400">0</div>
+      </div>
+      <i data-lucide="refresh-cw"></i>
+    </div>
+
+    <div class="metric-card glass">
+      <div>
+        <div class="text-muted text-sm">Resolved</div>
+        <div id="resolved" class="text-xl font-bold mt-1 text-green-400">0</div>
+      </div>
+      <i data-lucide="check-circle"></i>
+    </div>
+  </div>
+
 </div>
 
-<!-- Toast UI (for friendly messages) -->
-<div id="toast" aria-live="polite" style="position:fixed;right:18px;bottom:18px;z-index:2000;display:none;">
-  <div id="toast-inner" style="min-width:220px;padding:12px;border-radius:8px;background:#111827;color:#fff;box-shadow:0 8px 24px rgba(2,6,23,0.6);"></div>
-</div>
+<canvas id="particles" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;"></canvas>
 
-<!-- Custom select converter + MutationObserver (to avoid native white popup). Converts selects except ones with data-native="1" -->
 <script>
-(function(){
-  function convertSelect(orig) {
-    if (!orig || orig.dataset.native === '1' || orig.dataset.cs === '1') return;
-    orig.dataset.cs = '1';
-    // hide native select
-    orig.style.position = 'absolute';
-    orig.style.left = '-9999px';
-    orig.style.opacity = '0';
-    orig.style.pointerEvents = 'none';
-    orig.tabIndex = -1;
-    orig.setAttribute('aria-hidden','true');
+lucide.createIcons();
 
-    // prevent native popup
-    const stopNative = e => { e.preventDefault(); e.stopImmediatePropagation && e.stopImmediatePropagation(); return false; };
-    orig.addEventListener('mousedown', stopNative);
-    orig.addEventListener('touchstart', stopNative);
+// ====================
+// Particle Background
+// ====================
+const canvas = document.getElementById('particles');
+const ctx = canvas.getContext('2d');
+let particles = [];
+function resizeCanvas(){ canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
 
-    // build UI
-    const wrap = document.createElement('div'); wrap.className = 'cs-wrapper';
-    const btn = document.createElement('button'); btn.type='button'; btn.className='cs-btn'; btn.setAttribute('aria-haspopup','listbox'); btn.setAttribute('aria-expanded','false');
-    const label = document.createElement('span'); label.className='cs-label'; label.textContent = (orig.options[orig.selectedIndex] || {}).text || '';
-    btn.appendChild(label);
-    const arrow = document.createElement('span'); arrow.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e6eef3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>'; btn.appendChild(arrow);
-
-    const list = document.createElement('div'); list.className='cs-list'; list.style.display='none'; list.setAttribute('role','listbox');
-
-    Array.from(orig.options).forEach(opt => {
-      const item = document.createElement('div'); item.className='cs-item'; item.dataset.value = opt.value; item.textContent = opt.text;
-      if (opt.selected) item.setAttribute('aria-selected','true');
-      if (opt.disabled) item.setAttribute('aria-disabled','true');
-      item.addEventListener('click', () => {
-        if (opt.disabled) return;
-        orig.value = item.dataset.value;
-        label.textContent = item.textContent;
-        list.querySelectorAll('.cs-item').forEach(i=>i.removeAttribute('aria-selected'));
-        item.setAttribute('aria-selected','true');
-        list.style.display='none'; btn.setAttribute('aria-expanded','false');
-        orig.dispatchEvent(new Event('change',{bubbles:true}));
-      });
-      list.appendChild(item);
-    });
-    if (!list.children.length) { const e=document.createElement('div'); e.className='cs-item'; e.textContent='No options'; list.appendChild(e); }
-
-    wrap.appendChild(btn); wrap.appendChild(list);
-    orig.parentNode.insertBefore(wrap, orig.nextSibling);
-
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const open = list.style.display === 'block';
-      document.querySelectorAll('.cs-list').forEach(l => { if (l !== list) l.style.display='none'; if (l.previousSibling) l.previousSibling.setAttribute && l.previousSibling.setAttribute('aria-expanded','false'); });
-      if (open) { list.style.display='none'; btn.setAttribute('aria-expanded','false'); } else { list.style.display='block'; btn.setAttribute('aria-expanded','true'); const sel=list.querySelector('.cs-item[aria-selected="true"]')||list.querySelector('.cs-item'); if(sel) sel.scrollIntoView({block:'nearest'}); }
-    });
-
-    document.addEventListener('click', (ev) => { if (!wrap.contains(ev.target)) { list.style.display='none'; btn.setAttribute('aria-expanded','false'); } });
-
-    orig.addEventListener('change', () => {
-      const v = orig.value;
-      const it = list.querySelector('.cs-item[data-value="'+String(v).replace(/"/g,'\\"')+'"]');
-      if (it) { list.querySelectorAll('.cs-item').forEach(i=>i.removeAttribute('aria-selected')); it.setAttribute('aria-selected','true'); label.textContent = it.textContent; }
-    });
-    // mark
-    console.log('[CS] converted select', orig.id || orig.name || orig);
-  }
-
-  function convertAll(){
-    const sels = Array.from(document.querySelectorAll('select')).filter(s=>s.dataset.native!=='1');
-    sels.forEach(convertSelect);
-  }
-  document.addEventListener('DOMContentLoaded', convertAll);
-  window.addEventListener('load', convertAll);
-
-  // Watch for dynamically added selects
-  const mo = new MutationObserver((mutations) => {
-    let found=false;
-    for (const m of mutations) {
-      m.addedNodes && m.addedNodes.forEach(n => {
-        if (n.nodeType===1) {
-          if (n.matches && n.matches('select')) found=true;
-          if (n.querySelector && n.querySelector('select')) found=true;
-        }
-      });
-    }
-    if (found) setTimeout(convertAll, 60);
+for(let i=0;i<80;i++){
+  particles.push({
+    x: Math.random()*canvas.width,
+    y: Math.random()*canvas.height,
+    r: Math.random()*3+1,
+    dx: (Math.random()-0.5)*0.3,
+    dy: (Math.random()-0.5)*0.3,
+    color: `rgba(255,255,255,${Math.random()*0.2+0.05})`
   });
-  mo.observe(document.documentElement,{childList:true,subtree:true});
-  window.__cs_convertAll = convertAll;
-})();
+}
+
+function animateParticles(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  for(let p of particles){
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fillStyle=p.color;
+    ctx.fill();
+    p.x += p.dx; p.y += p.dy;
+    if(p.x<0||p.x>canvas.width) p.dx*=-1;
+    if(p.y<0||p.y>canvas.height) p.dy*=-1;
+  }
+  requestAnimationFrame(animateParticles);
+}
+animateParticles();
+
+// ====================
+// Fetch metrics from API & count-up
+// ====================
+const API_BASE = '/adminpanel/api/'; // adjust if needed
+
+async function loadMetrics(){
+  try{
+    const res = await fetch(`${API_BASE}analytics/`);
+    if(!res.ok) throw new Error('API fetch failed');
+    const data = await res.json();
+
+    animateCount('total', data.total ?? 0);
+    animateCount('pending', data.pending ?? 0);
+    animateCount('progress', data.in_progress ?? 0);
+    animateCount('resolved', data.resolved ?? 0);
+  } catch(err){
+    console.error('Error loading metrics:', err);
+  }
+}
+
+// Count-up animation
+function animateCount(id, target){
+  const el = document.getElementById(id);
+  const duration = 1500;
+  const start = 0;
+  const stepTime = Math.max(Math.floor(duration / target), 20);
+  let current = start;
+  const timer = setInterval(()=>{
+    current += 1;
+    el.textContent = current;
+    if(current >= target){
+      el.textContent = target;
+      clearInterval(timer);
+    }
+  }, stepTime);
+}
+
+loadMetrics();
 </script>
 
-<!-- App JS: fetch analytics, populate grievances table (internal scrolling), CSV export -->
-<script>
-/* small fetch helper with JSON & error handling */
-async function fetchJSON(url, opts={}) {
-  opts.credentials = 'same-origin';
-  opts.headers = Object.assign({'Accept':'application/json','X-Requested-With':'XMLHttpRequest'}, opts.headers||{});
-  const res = await fetch(url, opts);
-  if (!res.ok) {
-    const t = await res.text().catch(()=>null);
-    const e = new Error('HTTP ' + res.status + (t?(' - '+t):''));
-    e.status = res.status; e.body = t;
-    throw e;
-  }
-  return res.json().catch(()=>null);
-}
-
-/* CSRF helper (for future POSTs) */
-function getCookie(name) {
-  let v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
-  return v ? decodeURIComponent(v.pop()) : null;
-}
-const CSRF_TOKEN = getCookie('csrftoken');
-
-/* toast helper */
-function showToast(message, type='info', timeout=5000) {
-  const toast = document.getElementById('toast');
-  const inner = document.getElementById('toast-inner');
-  inner.textContent = message;
-  inner.style.background = (type==='error') ? '#9b1c1c' : ((type==='success') ? '#065f46' : '#111827');
-  toast.style.display = 'block';
-  clearTimeout(window.__toastTimer);
-  window.__toastTimer = setTimeout(()=>{ toast.style.display='none'; }, timeout);
-}
-
-/* download blob helper */
-function downloadBlob(blob, filename='export.csv') {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
-
-/* analytics loader */
-async function loadAnalytics(){
-  const api = '/adminpanel/api/analytics/';
-  try {
-    ['card-total','card-open','card-resolved','card-sla'].forEach(id=>document.getElementById(id).textContent='…');
-    const data = await fetchJSON(api);
-
-    const total = data.total_grievances ?? data.total ?? 0;
-    const by_status = data.by_status || data.byStatus || {};
-    const avg = data.avg_resolution_days ?? data.avg ?? 0;
-    const openCount = (Number(by_status.new||0)+Number(by_status.in_progress||0))||0;
-    const resolvedCount = Number(by_status.resolved||0)||0;
-    document.getElementById('card-total').textContent = total;
-    document.getElementById('card-open').textContent = openCount;
-    document.getElementById('card-resolved').textContent = resolvedCount;
-    document.getElementById('card-sla').textContent = avg;
-
-    // top categories (backend returns by_category)
-    const top = data.by_category || data.top_categories || [];
-    const ul = document.getElementById('topCategories'); ul.innerHTML='';
-    if (Array.isArray(top) && top.length) {
-      top.slice(0,6).forEach(t => {
-        const li=document.createElement('li'); li.textContent = (t.name||t.category||'') + ' — ' + (t.count ?? '');
-        ul.appendChild(li);
-      });
-    } else ul.innerHTML='<li class="muted">No category data</li>';
-
-    const labels = Object.keys(by_status).length ? Object.keys(by_status) : ['No data'];
-    const values = labels.map(k => Number(by_status[k]||0));
-    renderStatusChart(labels, values);
-  } catch (err) {
-    console.error('analytics load failed', err);
-    ['card-total','card-open','card-resolved','card-sla'].forEach(id=>document.getElementById(id).textContent='—');
-    document.getElementById('topCategories').innerHTML = '<li class="muted">Could not load analytics</li>';
-  }
-}
-
-let statusChart = null;
-function renderStatusChart(labels, values){
-  const ctx = document.getElementById('statusChart').getContext('2d');
-  if (statusChart) statusChart.destroy();
-  statusChart = new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      labels: labels,
-      datasets: [{ data: values.length?values:[1], backgroundColor: ['rgba(14,165,164,0.9)','rgba(79,70,229,0.9)','rgba(34,197,94,0.9)','rgba(249,115,22,0.9)','rgba(239,68,68,0.9)'] }]
-    },
-    options: { plugins: { legend: { labels: { color: 'rgba(230,238,243,0.9)' } } } }
-  });
-}
-
-/* load categories for filter */
-async function loadCategories() {
-  try {
-    const cats = await fetchJSON('/adminpanel/api/categories/');
-    const sel = document.getElementById('filter-category');
-    sel.innerHTML = '<option value="">All categories</option>';
-    if (Array.isArray(cats)) {
-      cats.forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c.id || c.name;
-        opt.textContent = c.name || c;
-        sel.appendChild(opt);
-      });
-    }
-  } catch (err) {
-    console.warn('Could not load categories', err);
-    const sel = document.getElementById('filter-category');
-    sel.innerHTML = '<option value="">(categories unavailable)</option>';
-  }
-}
-
-/* load officers for assign dropdown */
-async function loadOfficersList() {
-  try {
-    const resp = await fetchJSON('/adminpanel/api/user-status/');
-    const officers = resp.officers || [];
-    const sel = document.getElementById('officerList');
-
-    sel.innerHTML = '<option value="">Select officer</option>';
-
-    officers.forEach(o => {
-      const opt = document.createElement('option');
-      opt.value = o.id;
-      opt.textContent = o.full_name || o.username || o.email || o.id;
-      sel.appendChild(opt);
-    });
-
-    // 🔴 VERY IMPORTANT: re-render custom select
-    if (window.__cs_convertAll) {
-      window.__cs_convertAll();
-    }
-
-  } catch (err) {
-    console.warn('Could not load officers', err);
-    document.getElementById('officerList').innerHTML =
-      '<option value="">(no officers)</option>';
-  }
-}
-
-
-/* grievances loader using limit & offset */
-let currentPage = 1;
-async function loadGrievances(page=1){
-  const api = '/adminpanel/api/grievances/';
-  const status = document.getElementById('filter-status').value || '';
-  const category = document.getElementById('filter-category').value || '';
-  const pageSize = parseInt(document.getElementById('page-size').value || '25', 10) || 25;
-
-  const offset = (Math.max(1, page) - 1) * pageSize;
-  const params = new URLSearchParams({ limit: pageSize, offset: offset });
-  if (status) params.set('status', status);
-  if (category) params.set('category', category);
-
-  const tbody = document.getElementById('grievanceTable');
-  tbody.innerHTML = `<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--text-muted);">Loading…</td></tr>`;
-  try {
-    const payload = await fetchJSON(api + '?' + params.toString());
-    const rows = payload.results || payload.data || payload || [];
-    const total = payload.count ?? payload.total ?? rows.length;
-    document.getElementById('total-count').textContent = total;
-    tbody.innerHTML = '';
-    if (!rows.length) { tbody.innerHTML = `<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--text-muted);">No grievances found.</td></tr>`; return; }
-    rows.forEach(r => {
-      const tr=document.createElement('tr');
-      const userVal = (r.user && (r.user.username || r.user)) || (r.submitted_by && r.submitted_by.username) || (r.user_name||'');
-      const catVal = (r.category && (r.category.name || r.category)) || r.category || '';
-      tr.innerHTML = `<td>${r.id ?? ''}</td>
-        <td>${escapeHtml(r.title ?? r.subject ?? '')}</td>
-        <td>${escapeHtml(userVal)}</td>
-        <td>${escapeHtml(catVal)}</td>
-        <td>${escapeHtml(r.status ?? '')}</td>
-        <td><a class="btn-accent" href="/adminpanel/grievances/${r.id}/">View</a></td>`;
-      tbody.appendChild(tr);
-    });
-
-    currentPage = page;
-    const pageInfo = document.getElementById('page-info');
-    pageInfo.textContent = `Page ${page} — showing ${Math.min(pageSize, rows.length)} of ${total}`;
-  } catch (err) {
-    console.error('grievances load failed', err);
-    tbody.innerHTML = `<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--text-muted);">Failed to load grievances.</td></tr>`;
-  }
-}
-
-/* escape helper */
-function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-/* Export CSV handler (downloads CSV) */
-async function exportGrievancesCSV() {
-  const status = document.getElementById('filter-status').value || '';
-  const category = document.getElementById('filter-category').value || '';
-  const params = new URLSearchParams();
-  if (status) params.set('status', status);
-  if (category) params.set('category', category);
-  params.set('export_all', '1'); // request server to export all matches
-
-  const url = '/adminpanel/api/export/grievances/?' + params.toString();
-
-  try {
-    const res = await fetch(url, {
-      method: 'GET',
-      credentials: 'same-origin',
-      headers: { 'X-Requested-With': 'XMLHttpRequest' }
-    });
-
-    if (!res.ok) {
-      const ct = res.headers.get('Content-Type') || '';
-      if (ct.includes('application/json')) {
-        const j = await res.json().catch(()=>null);
-        const msg = j && (j.detail || j.error || j.message) ? (j.detail || j.error || j.message) : `Server returned ${res.status}`;
-        showToast(msg, 'error');
-      } else {
-        const txt = await res.text().catch(()=>null);
-        showToast(txt || `Export failed (HTTP ${res.status})`, 'error');
-      }
-      return;
-    }
-
-    const disp = res.headers.get('Content-Disposition') || '';
-    let filename = 'grievances_export.csv';
-    const m = /filename\*?=(?:UTF-8'')?["']?([^"';]+)["']?/.exec(disp);
-    if (m && m[1]) filename = decodeURIComponent(m[1]);
-
-    const blob = await res.blob();
-    downloadBlob(blob, filename);
-    showToast('Export started — file downloaded', 'success', 4000);
-  } catch (err) {
-    console.error('Export failed', err);
-    showToast('Export failed: ' + (err.message || 'Network error'), 'error');
-  }
-}
-
-/* wire actions */
-document.addEventListener('DOMContentLoaded', function(){
-  loadAnalytics();
-  loadCategories();
-  loadOfficersList();
-  loadGrievances(1);
-
-  document.getElementById('applyFilters').addEventListener('click', (e)=>{ e.preventDefault(); loadGrievances(1); });
-  document.getElementById('searchBtn').addEventListener('click', (e)=>{ e.preventDefault(); loadGrievances(1); });
-
-  document.getElementById('prevPage').addEventListener('click', (e) => { e.preventDefault(); if (currentPage>1) loadGrievances(currentPage-1); });
-  document.getElementById('nextPage').addEventListener('click', (e) => { e.preventDefault(); loadGrievances(currentPage+1); });
-
-  document.getElementById('exportCsv').addEventListener('click', (e)=>{ e.preventDefault(); exportGrievancesCSV(); });
-  document.getElementById('exportBtn').addEventListener('click', (e)=>{ e.preventDefault(); exportGrievancesCSV(); });
-});
-/* ------------------------------
-   Officer Assignment Feature
----------------------------------*/
-
-// Keep track of the selected grievance
-let selectedGrievanceId = null;
-
-// Highlight selected row
-function highlightSelectedRow(tr) {
-  document.querySelectorAll('#grievanceTable tr').forEach(r => r.classList.remove('selected-row'));
-  if (tr) tr.classList.add('selected-row');
-}
-
-// Add click listeners to table rows after loading grievances
-function wireRowSelection() {
-  const rows = document.querySelectorAll('#grievanceTable tr');
-  rows.forEach(tr => {
-    tr.addEventListener('click', () => {
-      const id = tr.querySelector('td:first-child')?.textContent?.trim();
-      if (!id) return;
-      selectedGrievanceId = id;
-      highlightSelectedRow(tr);
-    });
-  });
-}
-
-// Assign officer when button clicked
-document.getElementById('assignButton').addEventListener('click', async () => {
-  const officerId = document.getElementById('officerList').value;
-  if (!officerId) { showToast('Please select an officer', 'error'); return; }
-  if (!selectedGrievanceId) { showToast('Please select a grievance first', 'error'); return; }
-
-  try {
-    const res = await fetch('/adminpanel/api/assign-officer/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': CSRF_TOKEN
-      },
-      body: JSON.stringify({ grievance_id: selectedGrievanceId, officer_id: officerId })
-    });
-
-    if (!res.ok) {
-      const text = await res.text().catch(()=>null);
-      throw new Error(text || `Server error ${res.status}`);
-    }
-
-    showToast(`Officer assigned to grievance #${selectedGrievanceId}`, 'success');
-    selectedGrievanceId = null;
-    document.getElementById('officerList').value = '';
-    document.querySelectorAll('#grievanceTable tr').forEach(r => r.classList.remove('selected-row'));
-    loadGrievances(currentPage); // refresh table
-  } catch (err) {
-    console.error(err);
-    showToast('Failed to assign officer', 'error');
-  }
-});
-
-/* Add some CSS for selected row */
-const style = document.createElement('style');
-style.innerHTML = `
-#grievanceTable tr.selected-row { background: rgba(79,70,229,0.2); }
-#grievanceTable tr:hover { cursor: pointer; background: rgba(255,255,255,0.03); }
-`;
-document.head.appendChild(style);
-
-// After each grievance load, wire row selection
-const originalLoadGrievances = loadGrievances;
-loadGrievances = async function(page=1) {
-  await originalLoadGrievances(page);
-  wireRowSelection();
-};
-
-</script>
-
-<script>lucide.createIcons();</script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
 

@@ -1,0 +1,282 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Grievance Detail</title>
+
+<!-- Tailwind CSS --> 
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Lucide Icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<style>
+:root{
+  --bg-start:#071124; --bg-end:#072f2e;
+  --text-high:#e6eef3; --text-muted:#a8bbc6;
+  --accent:#4f46e5;
+}
+
+/* Body */
+body{
+  font-family:Inter,system-ui;
+  background: linear-gradient(180deg,var(--bg-start),var(--bg-end));
+  color: var(--text-high);
+  min-height:100vh;
+}
+
+/* Glass card */
+.glass{
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+  border: 1px solid rgba(255,255,255,0.05);
+  backdrop-filter: blur(8px);
+  border-radius: 1rem;
+  padding: 20px;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+.glass:hover{
+  transform:translateY(-3px);
+  box-shadow:0 10px 20px rgba(0,0,0,0.3);
+}
+
+/* Buttons */
+.btn{
+  background:#4f46e5;
+  padding:8px 14px;
+  border-radius:8px;
+  color:white;
+  display:inline-flex;
+  gap:6px;
+  align-items:center;
+  transition:0.3s;
+}
+.btn:hover{background:#6366f1;}
+
+/* Fade in animation */
+@keyframes fadeIn {0%{opacity:0;transform:translateY(15px);}100%{opacity:1;transform:translateY(0);}}
+.animate-fadeIn{animation:fadeIn 0.7s ease-out;}
+
+/* Sidebar */
+.sidebar nav a{
+  text-decoration:none;
+  display:flex;
+  gap:12px;
+  align-items:center;
+  padding:10px;
+  border-radius:10px;
+  color:var(--text-high);
+  transition:0.2s;
+}
+.sidebar nav a:hover{
+  background:linear-gradient(90deg,#4f46e5,#6366f1);
+  color:white;
+  transform:translateX(4px);
+}
+
+/* Header */
+.header-glass{
+  background: linear-gradient(135deg,#16a34a,#22c55e);
+  padding: 20px;
+  border-radius:12px;
+  color:white;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  box-shadow:0 5px 15px rgba(0,0,0,0.2);
+}
+
+/* Card Green Border */
+.card-green{
+  background: rgba(16,185,129,0.05);
+  border-left:4px solid #10b981;
+  border-radius:12px;
+  padding:20px;
+  transition:transform 0.3s,box-shadow 0.3s;
+}
+.card-green:hover{
+  transform:translateY(-2px);
+  box-shadow:0 10px 20px rgba(0,0,0,0.15);
+}
+</style>
+</head>
+
+<body>
+<div class="flex flex-col md:flex-row min-h-screen">
+
+  <!-- SIDEBAR -->
+  <aside class="w-72 p-6 glass flex flex-col justify-between sidebar">
+    <div>
+      <div class="flex items-center gap-3 mb-6">
+        <img src="{% static 'images/favicon.ico' %}" width="42" class="rounded-full shadow-lg">
+        <div>
+          <div class="font-bold text-lg text-white">Officer Panel</div>
+          <div class="text-sm text-slate-400">Grievance System</div>
+        </div>
+      </div>
+
+      <nav class="space-y-3">
+        <a href="/officer/" class="flex items-center gap-3"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+        <a href="/officer/grievances/" class="flex items-center gap-3"><i data-lucide="file-text"></i> My Grievances</a>
+        <a href="{% url 'accounts:logout' %}" class="flex items-center gap-3"><i data-lucide="log-out"></i> Logout</a>
+      </nav>
+    </div>
+
+    <div class="text-sm text-slate-400 mt-6">
+      Logged in as<br>
+      <span class="font-semibold text-white">{{ request.user.username }}</span>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="flex-1 p-6 flex flex-col gap-6 overflow-auto">
+
+    <!-- HEADER -->
+    <div class="header-glass animate-fadeIn">
+      <h1 class="text-2xl font-bold flex items-center gap-3">
+        <i data-lucide="file-text" class="w-8 h-8"></i>
+        Grievance Detail
+      </h1>
+      <p class="text-white/90">View and update assigned grievance</p>
+    </div>
+
+    <!-- GRIEVANCE CARD -->
+    <div id="grievanceCard" class="card-green animate-fadeIn flex flex-col gap-4">
+
+      <!-- Tracking ID & Title -->
+      <div>
+        <p class="text-slate-400 text-sm">Tracking ID</p>
+        <p id="trackingId" class="text-teal-400 font-bold text-lg">—</p>
+      </div>
+
+      <div class="flex items-center gap-2 mt-2">
+        <i data-lucide="file" class="w-5 h-5 text-green-400"></i>
+        <div>
+          <p class="text-slate-400 text-sm">Title</p>
+          <p id="title" class="text-white font-semibold text-lg">—</p>
+        </div>
+      </div>
+
+      <div>
+        <p class="text-slate-400 text-sm mt-2">Status</p>
+        <p id="status" class="text-lg font-semibold text-green-400">—</p>
+      </div>
+
+      <div>
+        <p class="text-slate-400 text-sm mt-2">Description</p>
+        <p id="description" class="text-white/90">—</p>
+      </div>
+
+      <!-- Status Update -->
+      <div class="mt-4 flex flex-col md:flex-row gap-4 items-center">
+        <select id="statusSelect" class="p-2 rounded bg-slate-800 text-white flex-1">
+          <option value="">-- Update Status --</option>
+          <option value="pending">Pending</option>
+          <option value="in_progress">In Progress</option>
+          <option value="resolved">Resolved</option>
+        </select>
+        <button id="updateStatusBtn" class="btn"><i data-lucide="refresh-ccw"></i> Update Status</button>
+      </div>
+
+      <!-- Remarks (Read Only) -->
+      <div class="mt-4">
+        <h3 class="text-white font-semibold mb-2">Remarks</h3>
+        <ul id="remarksList" class="list-disc pl-5 text-slate-300">
+          <li>Loading remarks…</li>
+        </ul>
+      </div>
+
+    </div>
+
+  </main>
+</div>
+
+<script>
+const grievanceId = window.location.pathname.split("/").filter(Boolean).pop();
+const apiDetail = `/officer/api/grievances/${grievanceId}/`;
+const apiStatus = `/officer/api/grievances/${grievanceId}/status/`;
+
+// Load grievance details
+async function loadGrievance(){
+  const res = await fetch(apiDetail);
+  if(!res.ok) return;
+  const data = await res.json();
+
+  document.getElementById("trackingId").innerText = data.tracking_id ?? "—";
+  document.getElementById("title").innerText = data.title ?? "—";
+  document.getElementById("description").innerText = data.description ?? "—";
+  document.getElementById("status").innerText = data.status ?? "—";
+
+  const updateBtn = document.getElementById("updateStatusBtn");
+  const statusSelect = document.getElementById("statusSelect");
+  if(data.status === "resolved"){
+    updateBtn.disabled = true;
+    updateBtn.classList.add("opacity-50","cursor-not-allowed");
+    statusSelect.disabled = true;
+  } else {
+    updateBtn.disabled = false;
+    updateBtn.classList.remove("opacity-50","cursor-not-allowed");
+    statusSelect.disabled = false;
+  }
+
+  // Load remarks
+  const ul = document.getElementById("remarksList");
+  ul.innerHTML = "";
+  if(data.remarks && data.remarks.length){
+    data.remarks.forEach(r=>{
+      ul.innerHTML += `<li>${r.officer ?? r.user}: ${r.remark} <span class="text-slate-400 text-xs">(${new Date(r.created_at).toLocaleString()})</span></li>`;
+    });
+  } else {
+    ul.innerHTML = "<li>No remarks yet</li>";
+  }
+}
+
+// Update status
+document.getElementById("updateStatusBtn").addEventListener("click", async ()=>{
+  const status = document.getElementById("statusSelect").value;
+  if(!status) return;
+  const res = await fetch(apiStatus,{
+    method:"POST",
+    headers:{'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest','X-CSRFToken': getCookie('csrftoken')},
+    body: JSON.stringify({status})
+  });
+  if(res.ok) loadGrievance();
+});
+
+// CSRF helper
+function getCookie(name){
+  let cookieValue = null;
+  if(document.cookie && document.cookie !== ''){
+    const cookies = document.cookie.split(';');
+    for(let i=0;i<cookies.length;i++){
+      const cookie = cookies[i].trim();
+      if(cookie.substring(0,name.length+1) === (name+'=')){
+        cookieValue = decodeURIComponent(cookie.substring(name.length+1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+document.addEventListener("DOMContentLoaded", ()=>{
+  loadGrievance();
+  lucide.createIcons();
+});
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+

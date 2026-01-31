@@ -26,6 +26,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from .models import Grievance
 from django.core.serializers.json import DjangoJSONEncoder
+from django.views.decorators.http import require_GET
 
 
 from adminpanel.models import Category, Grievance, GrievanceRemark, ChangeLog, Department
@@ -128,6 +129,10 @@ class SettingsForm(forms.Form):
     notifications_enabled = forms.BooleanField(required=False, initial=True, label='Enable Notifications')
     notification_email = forms.EmailField(required=False, label='Notification email (from)')
 
+def api_departments(request):
+    data = list(Department.objects.values("id", "name"))
+    return JsonResponse(data, safe=False)
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated, IsAdminPanel])
 def api_officers_list(request):
@@ -146,7 +151,24 @@ def api_officers_list(request):
         ]
     })
 def grievance_detail_api(request, grievance_id):
+    """
+    Returns JSON for a grievance including remarks.
+    Works with the standalone grievance_detail.html page.
+    """
     g = get_object_or_404(Grievance, id=grievance_id)
+
+    # Fetch remarks ordered by creation
+    remarks_qs = GrievanceRemark.objects.filter(grievance=g).order_by("created_at")
+    remarks_list = [
+        {
+            "id": r.id,
+            "remark": r.remark,
+            "officer_name": r.officer.get_full_name() or r.officer.username,
+            "created_at": r.created_at.strftime("%Y-%m-%d %H:%M"),
+        }
+        for r in remarks_qs
+    ]
+
     data = {
         "id": g.id,
         "title": g.title,
@@ -155,9 +177,11 @@ def grievance_detail_api(request, grievance_id):
         "category": g.category.name if g.category else "",
         "submitted_by": g.user.username if g.user else "",
         "assigned_officer": g.assigned_officer.username if g.assigned_officer else "",
-        "created_at": g.created_at.strftime("%Y-%m-%d %H:%M"),
-        "updated_at": g.updated_at.strftime("%Y-%m-%d %H:%M"),
+        "created_at": g.created_at.strftime("%Y-%m-%d %H:%M") if g.created_at else "",
+        "updated_at": g.updated_at.strftime("%Y-%m-%d %H:%M") if g.updated_at else "",
+        "remarks": remarks_list,  # ✅ include remarks
     }
+
     return JsonResponse(data, encoder=DjangoJSONEncoder)
 @login_required
 @never_cache
@@ -346,8 +370,6 @@ def settings_page(request):
         form = SettingsForm(initial=initial)
     return render(request, 'adminpanel/settings.html', {'form': form})
 
-
-
 class Echo:
     """Object that implements write() for csv.writer to stream."""
     def write(self, value):
@@ -407,136 +429,111 @@ def api_category_detail(request, pk):
     category.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
 
-
-@api_view(["GET", "POST"])
+# -------------------- LIST API --------------------
+@api_view(["GET"])
 @permission_classes([IsAuthenticated, IsAdminPanel])
 def api_grievances_list(request):
-    if request.method == "POST":
-        data = request.data.copy()
-        try:
-            data = normalize_department(data)
-        except drf_serializers.ValidationError as exc:
-            return Response(exc.detail, status=status.HTTP_400_BAD_REQUEST)
-
-        serializer = GrievanceCreateUpdateSerializer(data=data, context={"request": request})
-        if serializer.is_valid():
-            obj = serializer.save()
-            return Response(GrievanceDetailSerializer(obj, context={"request": request}).data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    qs = Grievance.objects.select_related("user", "category", "department", "assigned_officer").all().order_by("-created_at")
-
-
-    status_q = request.GET.get("status")
-    if status_q:
-        qs = qs.filter(status__iexact=status_q)
-
-    category_q = request.GET.get("category")
-    if category_q:
-        if str(category_q).isdigit():
-            qs = qs.filter(category__id=int(category_q))
-        else:
-            qs = qs.filter(category__name__icontains=category_q)
-
-    assigned_q = request.GET.get("assigned_officer") or request.GET.get("assigned_to") or request.GET.get("assigned")
-    if assigned_q and str(assigned_q).isdigit():
-        qs = qs.filter(assigned_officer__id=int(assigned_q))
-
-    user_q = request.GET.get("user")
-    if user_q and str(user_q).isdigit():
-        qs = qs.filter(user__id=int(user_q))
-
-    search = request.GET.get("search")
-    if search:
-        qs = qs.filter(
-            Q(title__icontains=search)
-            | Q(description__icontains=search)
-            | Q(user__username__icontains=search)
-            | Q(user__first_name__icontains=search)
-            | Q(user__last_name__icontains=search)
+    grievances = (
+        Grievance.objects
+        .select_related(
+            'user',
+            'category',
+            'assigned_officer'
         )
+        .order_by('-created_at')
+    )
 
-    date_from = request.GET.get("date_from")
-    date_to = request.GET.get("date_to")
-    if date_from:
-        d = parse_date(date_from)
-        if d:
-            qs = qs.filter(created_at__date__gte=d)
-    if date_to:
-        d = parse_date(date_to)
-        if d:
-            qs = qs.filter(created_at__date__lte=d)
+    results = []
+    open_count = 0
+    resolved_count = 0
 
-   
-    try:
-        limit = int(request.GET.get("limit") or 0)
-        offset = int(request.GET.get("offset") or 0)
-    except ValueError:
-        limit = 0
-        offset = 0
+    for g in grievances:
+        if g.status.lower() == "resolved":
+            resolved_count += 1
+        else:
+            open_count += 1
 
-    total = qs.count()
-    if limit > 0:
-        qs = qs[offset: offset + limit]
-    else:
-        qs = qs[offset: offset + 100]
+        results.append({
+            "id": g.id,
+            "title": g.title,
+            "status": g.status.lower(),
+            "user": {
+                "id": g.user.id,
+                "username": g.user.username
+            } if g.user else None,
+            "assigned_officer": {
+                "id": g.assigned_officer.id,
+                "username": g.assigned_officer.username
+            } if g.assigned_officer else None,
+            "created_at": g.created_at.strftime("%Y-%m-%d %H:%M"),
+        })
 
-    serializer = GrievanceListSerializer(qs, many=True, context={"request": request})
-    return Response({"count": total, "results": serializer.data})
+    return Response({
+        "count": grievances.count(),
+        "open_count": open_count,
+        "resolved_count": resolved_count,
+        "results": results
+    })
 
-
+# -------------------- DETAIL / UPDATE / DELETE API --------------------
 @api_view(["GET", "PATCH", "PUT", "DELETE"])
 @permission_classes([IsAuthenticated, IsAdminPanel])
 def api_grievance_detail(request, pk):
     grievance = get_object_or_404(Grievance, pk=pk)
 
+    # -------------------- GET --------------------
     if request.method == "GET":
         serializer = GrievanceDetailSerializer(grievance, context={"request": request})
         return Response(serializer.data)
 
+    # -------------------- UPDATE --------------------
     if request.method in ("PATCH", "PUT"):
         partial = request.method == "PATCH"
         data = request.data.copy()
+
         try:
             data = normalize_department(data)
         except drf_serializers.ValidationError as exc:
-            return Response(exc.detail, status=status.HTTP_400_BAD_REQUEST)
+            return Response(exc.detail, status=400)
 
         serializer = GrievanceCreateUpdateSerializer(grievance, data=data, partial=partial, context={"request": request})
-        if serializer.is_valid():
-            before_status = grievance.status
-            before_assigned = getattr(grievance.assigned_officer, "pk", None)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=400)
 
-            updated = serializer.save()
+        before_status = grievance.status
+        before_assigned = grievance.assigned_officer_id
 
-            if before_status != updated.status:
-                ChangeLog.objects.create(
-                    user=request.user,
-                    grievance=updated,
-                    action="status_changed",
-                    before=str(before_status),
-                    after=str(updated.status),
-                )
+        updated = serializer.save()
 
-            after_assigned = getattr(updated.assigned_officer, "pk", None)
-            if str(before_assigned) != str(after_assigned):
-                ChangeLog.objects.create(
-                    user=request.user,
-                    grievance=updated,
-                    action="assigned_officer_changed",
-                    before=str(before_assigned),
-                    after=str(after_assigned),
-                )
+        # ---- Change logs
+        if before_status != updated.status:
+            ChangeLog.objects.create(
+                user=request.user,
+                grievance=updated,
+                action="status_changed",
+                before=str(before_status),
+                after=str(updated.status),
+            )
+        if before_assigned != updated.assigned_officer_id:
+            ChangeLog.objects.create(
+                user=request.user,
+                grievance=updated,
+                action="assigned_officer_changed",
+                before=str(before_assigned),
+                after=str(updated.assigned_officer_id),
+            )
 
-            return Response(GrievanceDetailSerializer(updated, context={"request": request}).data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(GrievanceDetailSerializer(updated, context={"request": request}).data)
 
-   
-    if getattr(grievance, "feedback", None) or grievance.status == Grievance.STATUS_RESOLVED:
-        return Response({"detail": "Cannot delete a grievance that has feedback or is resolved."}, status=status.HTTP_400_BAD_REQUEST)
-    grievance.delete()
-    return Response(status=status.HTTP_204_NO_CONTENT)
+    # -------------------- DELETE --------------------
+    if request.method == "DELETE":
+        if getattr(grievance, "feedback", None):
+            return Response({"detail": "Cannot delete a grievance that has feedback."}, status=400)
+        if grievance.status == Grievance.STATUS_RESOLVED:
+            return Response({"detail": "Cannot delete a resolved grievance."}, status=400)
 
+        grievance.delete()
+        return Response(status=204)
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated, IsAdminPanel])
@@ -583,33 +580,69 @@ def api_grievance_add_remark(request, pk):
     serializer = GrievanceRemarkSerializer(remark, context={"request": request})
     return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-
-@api_view(["GET"])
-@permission_classes([IsAuthenticated, IsAdminPanel])
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def api_analytics(request):
+    # --------------------
+    # SUMMARY
+    # --------------------
     total = Grievance.objects.count()
+    pending = Grievance.objects.filter(status='new').count()
+    in_progress = Grievance.objects.filter(status='in_progress').count()
+    resolved = Grievance.objects.filter(status='resolved').count()
 
-    status_qs = Grievance.objects.values("status").annotate(count=Count("id"))
-    by_status = {item["status"]: item["count"] for item in status_qs}
+    # --------------------
+    # OFFICER PERFORMANCE
+    # --------------------
+    officers_qs = (
+        Grievance.objects
+        .exclude(assigned_officer=None)
+        .values(
+            'assigned_officer__id',
+            'assigned_officer__username',
+            'assigned_officer__first_name',
+            'assigned_officer__last_name'
+        )
+        .annotate(
+            assigned_count=Count('id'),
+            resolved_count=Count('id', filter=Q(status='resolved'))
+        )
+        .order_by('-resolved_count')
+    )
 
-    cat_qs = Category.objects.annotate(count=Count("grievances")).filter(count__gt=0).order_by("-count")
-    by_category = [{"id": c.id, "name": c.name, "count": c.count} for c in cat_qs]
+    by_officer = []
+    for o in officers_qs:
+        name = (
+            f"{o['assigned_officer__first_name']} {o['assigned_officer__last_name']}".strip()
+            or o['assigned_officer__username']
+        )
 
-    resolved_qs = Grievance.objects.filter(status=Grievance.STATUS_RESOLVED).annotate(
-        resolution_time=F("updated_at") - F("created_at")
-    ).values_list("resolution_time", flat=True)
+        by_officer.append({
+            "name": name,
+            "assigned": o['assigned_count'],
+            "resolved": o['resolved_count'],
+        })
 
-    avg_days = None
-    times = list(resolved_qs)
-    if times:
-        total_seconds = sum([t.total_seconds() if hasattr(t, "total_seconds") else 0 for t in times])
-        avg_days = round((total_seconds / len(times)) / 86400, 2)
+    # --------------------
+    # AVG RESOLUTION TIME
+    # --------------------
+    resolved_qs = Grievance.objects.filter(status='resolved').annotate(
+        resolution_time=F('updated_at') - F('created_at')
+    )
 
-    return Response({
-        "total_grievances": total,
-        "by_status": by_status,
-        "by_category": by_category,
+    times = [g.resolution_time.total_seconds() for g in resolved_qs if g.resolution_time]
+    avg_days = round((sum(times) / len(times)) / 86400, 2) if times else 0
+
+    # --------------------
+    # FINAL RESPONSE
+    # --------------------
+    return JsonResponse({
+        "total": total,
+        "pending": pending,
+        "in_progress": in_progress,
+        "resolved": resolved,
         "avg_resolution_days": avg_days,
+        "by_officer": by_officer
     })
 
 
@@ -962,3 +995,4 @@ def debug_request_inspect(request):
 def grievance_detail_view(request, grievance_id):  # ⚠️ must match the URL param
     # pass grievance_id to template context
     return render(request, 'adminpanel/grievance_detail.html', {'grievance_id': grievance_id})
+

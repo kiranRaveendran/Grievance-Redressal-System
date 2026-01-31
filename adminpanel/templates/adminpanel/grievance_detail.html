@@ -1,252 +1,179 @@
 {% load static %}
-<!doctype html>
-<html lang="en" class="h-full">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Admin — Grievance #{{ grievance_id }}</title>
+<meta charset="UTF-8">
+<title>Admin | Grievance Detail</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="csrf-token" content="{{ csrf_token }}">
 
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <link rel="icon" href="{% static 'images/favicon.ico' %}">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
 
-  <style>
-    :root{
-      --bg-start: #071124;
-      --bg-end:   #072f2e;
-      --brand:    #0ea5a4;
-      --accent:   #7c3aed;
-      --muted:    #98aeb8;
-      --card:     rgba(255,255,255,0.03);
-      --glass-border: rgba(255,255,255,0.04);
-      --text-high: #e6eef3;
-    }
-
-    html,body { height:100%; margin:0; }
-    body {
-      background: linear-gradient(180deg,var(--bg-start),var(--bg-end));
-      color: var(--text-high);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-      -webkit-font-smoothing:antialiased;
-      -moz-osx-font-smoothing:grayscale;
-    }
-
-    .glass {
-      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-      border: 1px solid var(--glass-border);
-      box-shadow: 0 8px 28px rgba(2,6,23,0.45);
-      backdrop-filter: blur(6px);
-      border-radius: 1rem;
-    }
-
-    .btn-primary, .btn-accent {
-      padding: .5rem .85rem;
-      border-radius:.5rem;
-      font-weight:600;
-      cursor:pointer;
-      text-align:center;
-      transition: all .2s;
-    }
-    .btn-primary { background: linear-gradient(90deg,var(--brand),#0b8f8b); color:#fff; }
-    .btn-primary:hover { opacity:.9; }
-    .btn-accent { background: linear-gradient(90deg,var(--accent),#5b21b6); color:#fff; }
-    .btn-accent:hover { opacity:.9; }
-
-    .select-readable {
-      width:100%;
-      padding:.5rem .75rem;
-      border-radius:.5rem;
-      background: rgba(255,255,255,0.05);
-      color: var(--text-high);
-      border: 1px solid rgba(255,255,255,0.1);
-      outline:none;
-      appearance:none;
-      -webkit-appearance:none;
-      -moz-appearance:none;
-    }
-
-    .status-badge {
-      padding: .25rem .5rem;
-      border-radius:.375rem;
-      font-weight:600;
-      text-transform:capitalize;
-      display:inline-block;
-    }
-    .b-new { background: rgba(245,158,11,0.12); color:#fbbf24; }
-    .b-in_progress { background: rgba(14,165,164,0.08); color:#2dd4bf; }
-    .b-resolved { background: rgba(16,185,129,0.08); color:#34d399; }
-    .b-closed { background: rgba(107,114,128,0.06); color:#94a3b8; }
-
-    .info-row { display:grid; grid-template-columns:160px 1fr; gap:12px; margin-bottom:12px; align-items:center; }
-    .info-label { color: var(--muted); font-weight:500; }
-    .info-value { font-weight:600; word-break:break-word; }
-
-    .avatar { width:28px; height:28px; border-radius:50%; background:#0ea5a4; display:flex; align-items:center; justify-content:center; font-size:.7rem; font-weight:600; color:#fff; }
-
-    .button-row { display:flex; gap:16px; margin-top:16px; flex-wrap:wrap; }
-
-    .timeline { border-left:2px solid rgba(255,255,255,0.1); padding-left:16px; max-height:220px; overflow-y:auto; margin-top:16px; }
-    .timeline-item { position:relative; margin-bottom:12px; padding-left:12px; }
-    .timeline-item::before { content:""; position:absolute; left:-8px; top:4px; width:8px; height:8px; border-radius:50%; background:#0ea5a4; }
-
-    @media (max-width:1024px){ .two-cols { flex-direction:column; } }
-    @media (max-width:768px){ .info-row { grid-template-columns:1fr; } }
-  </style>
+<style>
+body {
+  background:
+    radial-gradient(circle at top,#14b8a633,transparent 45%),
+    linear-gradient(180deg,#020617,#031f1c);
+  color:#e5e7eb;
+  font-family:Inter,system-ui;
+}
+.glass {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1);
+  backdrop-filter: blur(16px);
+}
+.card { transition:.3s; }
+.card:hover {
+  transform: translateY(-6px);
+  box-shadow:0 25px 50px rgba(0,0,0,.6);
+}
+.badge {
+  padding: .25rem .6rem;
+  border-radius: .5rem;
+  font-size:.75rem;
+}
+.b-new { background:#f59e0b22;color:#fbbf24; }
+.b-in_progress { background:#0ea5a422;color:#2dd4bf; }
+.b-resolved { background:#10b98122;color:#34d399; }
+</style>
 </head>
 
-<body class="min-h-screen antialiased">
-<div class="min-h-screen flex">
-  <!-- SIDEBAR -->
-  <aside class="w-72 p-6 hidden md:flex flex-col gap-6 glass">
-    <div class="flex items-center gap-3">
-      <img src="{% static 'images/favicon.ico' %}" class="w-12 h-12 rounded-lg" alt="logo">
-      <div>
-        <div class="font-bold text-lg">Grievance Admin</div>
-        <div class="text-xs muted">Control center</div>
-      </div>
+<body class="p-6">
+
+<!-- Back link (NO underline) -->
+<a href="{% url 'adminpanel:grievances_list' %}"
+   class="text-teal-400 hover:text-teal-300 mb-6 inline-block"
+   style="text-decoration:none;">
+   &larr; Back to Grievances
+</a>
+
+<!-- Center Wrapper -->
+<div class="flex justify-center">
+  <div class="w-full max-w-3xl">
+
+    <h1 class="text-2xl font-bold mb-6 text-center">
+      Grievance Detail
+    </h1>
+
+    <!-- Grievance Details -->
+    <div id="grievanceDetails" class="glass p-6 rounded-xl space-y-3">
+      <p><strong>Grievance ID:</strong> <span id="gId">#GRV...</span></p>
+      <p><strong>Title:</strong> <span id="gTitle">Loading...</span></p>
+      <p><strong>Description:</strong> <span id="gDesc">Loading...</span></p>
+      <p><strong>Category:</strong> <span id="gCategory">-</span></p>
+      <p><strong>Status:</strong> <span id="gStatus" class="badge">-</span></p>
+      <p><strong>Submitted By:</strong> <span id="gUser">-</span></p>
+      <p><strong>Submitted On:</strong> <span id="gCreated">-</span></p>
+      <p><strong>Assigned Officer:</strong> <span id="gOfficer">Not Assigned</span></p>
     </div>
-    <nav class="flex-1">
-      <ul class="space-y-1">
-        <li><a href="{% url 'adminpanel:dashboard' %}" class="flex items-center gap-3 px-3 py-2 rounded-md ui-transition hover:bg-white/10"><i data-lucide="home" class="w-4 h-4"></i> Dashboard</a></li>
-        <li><a href="{% url 'adminpanel:grievances_list' %}" class="flex items-center gap-3 px-3 py-2 rounded-md ui-transition bg-white/10"><i data-lucide="file-text" class="w-4 h-4"></i> Grievances</a></li>
-      </ul>
-    </nav>
-  </aside>
 
-  <!-- MAIN -->
-  <div class="flex-1 min-h-screen flex flex-col">
-    <header class="flex items-center justify-between px-6 py-4 glass">
-      <div class="flex items-center gap-4">
-        <a href="{% url 'adminpanel:grievances_list' %}" class="btn-primary flex items-center gap-2"><i data-lucide="arrow-left" class="w-4 h-4"></i> Back</a>
-        <div class="text-xl font-semibold">Grievance #{{ grievance_id }}</div>
-      </div>
-    </header>
+    <!-- Add Remark -->
+    <div class="mt-6 glass p-4 rounded-xl">
+      <h3 class="font-semibold mb-2">Add Remark</h3>
+      <textarea id="remarkInput"
+        class="w-full p-2 rounded bg-black/20 border border-white/10"
+        rows="3"
+        placeholder="Type remark here..."></textarea>
+      <button onclick="addRemark()"
+        class="mt-2 px-4 py-1 bg-teal-500 rounded text-black">
+        Add Remark
+      </button>
+    </div>
 
-    <main class="p-6 flex justify-center">
-      <div class="w-full max-w-6xl flex gap-6 two-cols">
-        <!-- Left Column: Details + Timeline -->
-        <div class="flex-1 space-y-6">
-          <div class="glass p-6">
-            <h2 class="text-lg font-semibold mb-4">Grievance Details</h2>
-            <div id="grievanceDetails">Loading…</div>
-          </div>
+    <!-- Remarks List -->
+    <div class="mt-4">
+      <h3 class="font-semibold mb-2">Remarks</h3>
+      <ul id="remarksList" class="space-y-2"></ul>
+    </div>
 
-          <div class="glass p-6">
-            <h2 class="text-lg font-semibold mb-4">Activity Timeline</h2>
-            <div id="timeline" class="timeline">Loading…</div>
-          </div>
-        </div>
-
-        <!-- Right Column: Actions -->
-        <div class="w-80 space-y-6">
-          <div class="glass p-6">
-            <h2 class="text-lg font-semibold mb-4">Actions</h2>
-            <div class="info-row">
-              <div class="info-label">Status</div>
-              <select id="statusSelect" class="select-readable"></select>
-            </div>
-            <div class="info-row">
-              <div class="info-label">Assign Officer</div>
-              <select id="officerSelect" class="select-readable"></select>
-            </div>
-            <div class="button-row">
-              <button id="changeStatusBtn" class="btn-primary">Update Status</button>
-              <button id="assignOfficerBtn" class="btn-accent">Assign Officer</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </main>
   </div>
 </div>
 
 <script>
-const API_BASE = '/adminpanel/api/';
-const grievanceId = "{{ grievance_id }}";
-const CSRF_TOKEN = document.cookie.match('(^|;)\\s*csrftoken\\s*=\\s*([^;]+)')?.pop() || '';
+const grievanceId = {{ grievance_id }};
+const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
-async function loadGrievance(){
-  const container = document.getElementById('grievanceDetails');
-  const timeline = document.getElementById('timeline');
-  try {
-    const res = await fetch(`${API_BASE}grievances/${grievanceId}/`);
-    const g = await res.json();
+function loadGrievance() {
+  fetch(`/adminpanel/api/grievances/${grievanceId}/`)
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById("gId").textContent = "#GRV" + data.id;
+      document.getElementById("gTitle").textContent = data.title || "-";
+      document.getElementById("gDesc").textContent = data.description || "-";
+      document.getElementById("gCategory").textContent = data.category || "-";
 
-    // DETAILS
-    container.innerHTML = '';
-    const fields = [
-      ['ID', g.id],
-      ['Title', g.title],
-      ['Description', g.description],
-      ['Status', `<span class="status-badge b-${(g.status||'').replace(/ /g,'_')}">${g.status||''}</span>`],
-      ['Category', g.category?.name || g.category || ''],
-      ['Submitted by', g.submitted_by],
-      ['Assigned Officer', g.assigned_officer ? `<div class="avatar">${g.assigned_officer[0]}</div>${g.assigned_officer}` : '(Not assigned)'],
-      ['Created At', g.created_at],
-      ['Updated At', g.updated_at]
-    ];
-    fields.forEach(f=>{
-      const div = document.createElement('div');
-      div.className='info-row';
-      div.innerHTML = `<div class="info-label">${f[0]}</div><div class="info-value">${f[1]}</div>`;
-      container.appendChild(div);
-    });
+      const statusEl = document.getElementById("gStatus");
+      statusEl.textContent = data.status || "-";
+      statusEl.className = "badge b-" + (data.status || "new");
 
-    // STATUS SELECT
-    const statusSel = document.getElementById('statusSelect');
-    statusSel.innerHTML = `<option value="new">New</option><option value="in_progress">In Progress</option><option value="resolved">Resolved</option><option value="closed">Closed</option>`;
-    statusSel.value = g.status || 'new';
+      document.getElementById("gUser").textContent = data.submitted_by || "-";
+      document.getElementById("gCreated").textContent = data.created_at || "-";
+      document.getElementById("gOfficer").textContent =
+        data.assigned_officer || "Not Assigned";
 
-    // OFFICERS
-    const officerSel = document.getElementById('officerSelect');
-    const officersRes = await fetch(`${API_BASE}user-status/`);
-    const officersData = await officersRes.json();
-    officerSel.innerHTML = '<option value="">Select officer</option>';
-    (officersData.officers || []).forEach(o=>{
-      const opt = document.createElement('option');
-      opt.value=o.id; opt.textContent=o.username || o.full_name || o.email;
-      if(o.id == g.assigned_officer_id) opt.selected=true;
-      officerSel.appendChild(opt);
-    });
+      const ul = document.getElementById("remarksList");
+      ul.innerHTML = "";
 
-    // TIMELINE
-    timeline.innerHTML = '';
-    (g.timeline || []).forEach(t=>{
-      const div = document.createElement('div');
-      div.className='timeline-item';
-      div.innerHTML = `<div><span class="text-sm muted">${t.time}</span> — ${t.message}</div>`;
-      timeline.appendChild(div);
-    });
-    if((g.timeline||[]).length===0) timeline.innerHTML='<div class="text-sm muted">No activity yet.</div>';
-
-  } catch(e){ console.error(e); container.innerHTML='<div class="text-red-500">Failed to load grievance</div>'; timeline.innerHTML=''; }
+      if (data.remarks && data.remarks.length > 0) {
+        data.remarks.forEach(r => {
+          const li = document.createElement("li");
+          li.className = "glass p-2 rounded";
+          li.innerHTML = `
+            <strong>${r.officer_name}</strong>
+            <span class="text-gray-400 text-xs">(${r.created_at})</span><br>
+            ${r.remark}
+          `;
+          ul.appendChild(li);
+        });
+      } else {
+        ul.innerHTML =
+          "<li class='text-gray-400'>No remarks yet</li>";
+      }
+    })
+    .catch(err => console.error(err));
 }
 
-// STATUS UPDATE
-document.getElementById('changeStatusBtn').addEventListener('click', async ()=>{
-  const status = document.getElementById('statusSelect').value;
-  try{
-    await fetch(`${API_BASE}grievances/${grievanceId}/`, {method:'PATCH', headers:{'Content-Type':'application/json','X-CSRFToken':CSRF_TOKEN}, body:JSON.stringify({status})});
-    await loadGrievance();
-    alert('Status updated');
-  }catch(e){ console.error(e); alert('Failed to update status'); }
-});
+function addRemark() {
+  const remarkText =
+    document.getElementById("remarkInput").value.trim();
+  if (!remarkText) return alert("Enter remark");
 
-// ASSIGN OFFICER
-document.getElementById('assignOfficerBtn').addEventListener('click', async ()=>{
-  const officerId = document.getElementById('officerSelect').value;
-  if(!officerId){ alert('Select officer'); return; }
-  try{
-    await fetch(`${API_BASE}grievances/${grievanceId}/assign/`, {method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':CSRF_TOKEN}, body:JSON.stringify({assigned_to:parseInt(officerId)})});
-    await loadGrievance();
-    alert('Officer assigned');
-  }catch(e){ console.error(e); alert('Failed to assign officer'); }
-});
+  fetch(`/adminpanel/api/grievances/${grievanceId}/remarks/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": csrfToken
+    },
+    body: JSON.stringify({ remark: remarkText })
+  })
+  .then(r => r.json())
+  .then(() => {
+    document.getElementById("remarkInput").value = "";
+    loadGrievance();
+  })
+  .catch(err => {
+    console.error(err);
+    alert("Failed to add remark.");
+  });
+}
 
-loadGrievance();
-lucide.createIcons();
+document.addEventListener("DOMContentLoaded", loadGrievance);
 </script>
+
+<script>lucide.createIcons();</script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
 
 

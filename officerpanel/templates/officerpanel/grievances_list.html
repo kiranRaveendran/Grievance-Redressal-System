@@ -1,82 +1,216 @@
-{% extends "officerpanel/base.html" %}
-{% block title %}My Grievances{% endblock %}
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Officer | My Grievances</title>
 
-{% block content %}
-<div class="bg-slate-900/70 border border-slate-700 rounded-xl p-6 shadow-lg">
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com"></script>
 
-    <h2 class="text-2xl font-semibold mb-6 flex items-center gap-2">
-        <i data-lucide="file-text" class="text-teal-400"></i>
-        Assigned Grievances
-    </h2>
+<!-- Lucide Icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
 
-    <div class="overflow-x-auto">
-        <table class="w-full border-collapse text-sm">
-            <thead>
-                <tr class="text-left text-slate-400 border-b border-slate-700">
-                    <th class="py-3">Tracking ID</th>
-                    <th>Title</th>
-                    <th>Status</th>
-                    <th>Category</th>
-                    <th>Created</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody id="grievanceTable">
-                <tr>
-                    <td colspan="6" class="text-center py-6 text-slate-400">
-                        Loading grievances…
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+<style>
+:root{
+  --bg-start:#071124;
+  --bg-end:#072f2e;
+  --text-high:#e6eef3;
+  --text-muted:#a8bbc6;
+}
+
+body{
+  background:linear-gradient(180deg,var(--bg-start),var(--bg-end));
+  color:var(--text-high);
+  font-family:Inter,system-ui;
+  min-height:100vh;
+}
+
+a, a:hover, a:focus{ text-decoration:none; }
+
+.glass{
+  background:rgba(255,255,255,0.035);
+  border:1px solid rgba(255,255,255,0.06);
+  backdrop-filter:blur(8px);
+  border-radius:1rem;
+  box-shadow:0 10px 30px rgba(2,6,23,.55);
+}
+
+.sidebar a{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  padding:10px;
+  border-radius:10px;
+}
+.sidebar a:hover{ background:rgba(255,255,255,.08); }
+</style>
+</head>
+
+<body>
+<div class="flex min-h-screen">
+
+<!-- SIDEBAR -->
+<aside class="w-72 p-6 glass sidebar flex flex-col justify-between">
+  <div>
+    <div class="flex items-center gap-3 mb-8">
+      <img src="{% static 'images/favicon.ico' %}" width="42" class="rounded">
+      <div>
+        <div class="font-bold text-lg">Officer Panel</div>
+        <div class="text-sm text-slate-400">Grievance Redressal</div>
+      </div>
     </div>
+
+    <nav class="space-y-2">
+      <a href="{% url 'officerpanel:dashboard' %}">
+        <i data-lucide="layout-dashboard"></i> Dashboard
+      </a>
+
+      <a href="{% url 'officerpanel:grievances_list' %}" class="bg-white/10">
+        <i data-lucide="file-text"></i> My Grievances
+      </a>
+
+      <a href="{% url 'accounts:logout' %}">
+        <i data-lucide="log-out"></i> Logout
+      </a>
+    </nav>
+  </div>
+
+  <div class="text-sm text-slate-400">
+    Logged in as<br>
+    <span class="font-semibold text-white">{{ request.user.username }}</span>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="flex-1 p-6 overflow-auto">
+
+  <!-- HEADER -->
+  <div class="glass p-5 mb-6 flex justify-between items-center">
+    <h2 class="text-2xl font-semibold flex items-center gap-2">
+      <i data-lucide="file-text" class="text-teal-400"></i>
+      Assigned Grievances
+    </h2>
+    <span class="text-sm text-slate-400">
+      Complaints assigned to your department
+    </span>
+  </div>
+
+  <!-- TABLE -->
+  <div class="glass p-6">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm border-collapse">
+        <thead>
+          <tr class="text-left text-slate-400 border-b border-white/10">
+            <th class="py-3">Tracking ID</th>
+            <th>Title</th>
+            <th>Status</th>
+            <th>Priority</th>
+            <th>Category</th>
+            <th>Created</th>
+            <th></th>
+          </tr>
+        </thead>
+
+        <tbody id="grievanceTable">
+          <tr>
+            <td colspan="7" class="py-8 text-center text-slate-400">
+              Loading grievances…
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
 </div>
 
 <script>
+const DETAIL_URL_TEMPLATE = "{% url 'officerpanel:grievance_detail' 0 %}";
+
 fetch("{% url 'officerpanel:api_grievances_list' %}")
 .then(res => res.json())
 .then(data => {
-    const tbody = document.getElementById("grievanceTable");
-    tbody.innerHTML = "";
 
-    if (!data.length) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="6" class="text-center py-6 text-slate-400">
-                    No grievances assigned
-                </td>
-            </tr>`;
-        return;
-    }
+  const tbody = document.getElementById("grievanceTable");
+  tbody.innerHTML = "";
 
-    data.forEach(g => {
-        let badge =
-            g.status === "Resolved" ? "bg-green-500/20 text-green-400" :
-            g.status === "In Progress" ? "bg-yellow-500/20 text-yellow-400" :
-            "bg-red-500/20 text-red-400";
+  if (!data.length) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" class="py-10 text-center text-slate-400">
+          <div class="flex flex-col items-center gap-2">
+            <i data-lucide="inbox" class="w-10 h-10"></i>
+            No grievances assigned yet
+          </div>
+        </td>
+      </tr>`;
+    lucide.createIcons();
+    return;
+  }
 
-        tbody.innerHTML += `
-            <tr class="border-b border-slate-800 hover:bg-slate-800/40 transition">
-                <td class="py-3 font-mono">${g.tracking_id}</td>
-                <td>${g.title}</td>
-                <td>
-                    <span class="px-3 py-1 rounded-full text-xs font-semibold ${badge}">
-                        ${g.status}
-                    </span>
-                </td>
-                <td>${g.category?.name || "-"}</td>
-                <td>${new Date(g.created_at).toLocaleDateString()}</td>
-                <td>
-                    <a href="/officer/grievances/${g.id}/"
-                       class="text-teal-400 hover:underline">
-                        View
-                    </a>
-                </td>
-            </tr>
-        `;
-    });
+  const statusMeta = status => {
+    const s = status.toLowerCase().replace(/\s+/g,'_');
+    if (["new","open","pending"].includes(s))
+      return {cls:"bg-red-500/20 text-red-400", icon:"alert-circle", label:"New"};
+    if (s==="in_progress")
+      return {cls:"bg-yellow-500/20 text-yellow-400", icon:"loader", label:"In Progress"};
+    if (s==="resolved")
+      return {cls:"bg-green-500/20 text-green-400", icon:"check-circle", label:"Resolved"};
+    return {cls:"bg-slate-500/20 text-slate-400", icon:"help-circle", label:status};
+  };
+
+  const priorityMeta = p => {
+    const s = (p || "medium").toLowerCase();
+    if (s==="low") return {cls:"bg-slate-500/20 text-slate-300", label:"Low"};
+    if (s==="high") return {cls:"bg-orange-500/20 text-orange-400", label:"High"};
+    if (s==="urgent") return {cls:"bg-red-600/30 text-red-400", label:"Urgent"};
+    return {cls:"bg-blue-500/20 text-blue-400", label:"Medium"};
+  };
+
+  data.forEach(g => {
+    const st = statusMeta(g.status);
+    const pr = priorityMeta(g.priority);
+    const detailUrl = DETAIL_URL_TEMPLATE.replace("0", g.id);
+
+    tbody.innerHTML += `
+      <tr class="border-b border-white/5 hover:bg-white/5 transition">
+        <td class="py-3 font-mono text-teal-400">${g.tracking_id}</td>
+        <td class="font-medium">${g.title}</td>
+        <td>
+          <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${st.cls}">
+            <i data-lucide="${st.icon}" class="w-3 h-3"></i>
+            ${st.label}
+          </span>
+        </td>
+        <td>
+          <span class="px-3 py-1 rounded-full text-xs font-semibold ${pr.cls}">
+            ${pr.label}
+          </span>
+        </td>
+        <td>${g.category?.name || "-"}</td>
+        <td class="text-slate-400">
+          ${new Date(g.created_at).toLocaleDateString()}
+        </td>
+        <td>
+          <a href="${detailUrl}" class="text-teal-400 font-medium hover:text-teal-300">
+            View
+          </a>
+        </td>
+      </tr>`;
+  });
+
+  lucide.createIcons();
 });
+
+lucide.createIcons();
 </script>
-{% endblock %}
+
+</body>
+</html>
+
+
+
 
 

@@ -3,6 +3,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
+from rest_framework import status
+from django.core.mail import send_mail
+from django.conf import settings
+from rest_framework import status as drf_status
 
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -153,42 +157,48 @@ def api_officer_add_remark(request, pk):
     return Response(serializer.errors, status=400)
 
 
-@csrf_exempt
-@api_view(["POST"])
+@api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def api_officer_update_status(request, pk):
-    if not is_officer(request.user):
-        return Response({"detail": "Not authorized"}, status=403)
+    """
+    Update status of grievance by officer
+    Send email to citizen if status is resolved
+    """
+    try:
+        grievance = Grievance.objects.get(pk=pk)
+    except Grievance.DoesNotExist:
+        return Response({"detail": "Grievance not found."}, status=drf_status.HTTP_404_NOT_FOUND)
 
-    grievance = get_object_or_404(
-        Grievance,
-        pk=pk,
-        assigned_officer=request.user
-    )
-
-    new_status = request.data.get("status")
-
-    allowed_statuses = {
-        Grievance.STATUS_PENDING,
-        Grievance.STATUS_IN_PROGRESS,
-        Grievance.STATUS_RESOLVED,
-    }
-
-    if new_status not in allowed_statuses:
-        return Response(
-            {"detail": f"Invalid status. Allowed: {allowed_statuses}"},
-            status=400
-        )
+    new_status = request.data.get('status')
+    if new_status not in ['pending', 'in_progress', 'resolved']:
+        return Response({"detail": "Invalid status"}, status=drf_status.HTTP_400_BAD_REQUEST)
 
     grievance.status = new_status
     grievance.save()
 
-    return Response(
-        {"id": grievance.id, "status": grievance.status},
-        status=200
-    )
+    # Send email if resolved
+    if new_status == 'resolved' and grievance.user.email:
+        subject = f"Your grievance {grievance.tracking_id} has been resolved"
+        message = f"""
+Hello {grievance.user.first_name or grievance.user.username},
 
+Your grievance titled "{grievance.title}" has been marked as RESOLVED by our officer.
 
+You can view your grievance details here: 
+http://{request.get_host()}/grievances/{grievance.pk}/
+
+Thank you,
+Grievance Redressal System
+"""
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [grievance.user.email],
+            fail_silently=False
+        )
+
+    return Response({"detail": "Status updated successfully."})
 @csrf_exempt
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])

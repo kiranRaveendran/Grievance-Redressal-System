@@ -1,4 +1,4 @@
-{% load static %}
+{% comment %} {% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -197,7 +197,133 @@
   lucide.createIcons();
 </script>
 </body>
+</html> {% endcomment %}
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Submit Grievance</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="icon" href="{% static 'images/favicon.ico' %}">
+</head>
+
+<body class="h-screen bg-gradient-to-br from-slate-900 to-black text-white overflow-hidden">
+
+<div class="flex h-full">
+
+  <!-- Sidebar -->
+  <aside class="w-64 bg-slate-800 p-6 flex flex-col justify-between">
+    <div>
+      <div class="flex items-center gap-3 mb-10">
+        <img src="{% static 'images/favicon.ico' %}" class="w-10 h-10 rounded">
+        <div>
+          <div class="font-bold text-lg">Citizen</div>
+          <div class="text-sm text-slate-400">Portal</div>
+        </div>
+      </div>
+
+      <nav class="space-y-2">
+        <a href="{% url 'citizen:dashboard' %}"
+           class="flex items-center gap-3 p-2 rounded hover:bg-indigo-600">
+          <i data-lucide="home"></i> Dashboard
+        </a>
+
+        <a href="{% url 'citizen:grievances_list' %}"
+           class="flex items-center gap-3 p-2 rounded hover:bg-indigo-600">
+          <i data-lucide="file-text"></i> My Grievances
+        </a>
+
+        <a href="{% url 'citizen:submit_grievance' %}"
+           class="flex items-center gap-3 p-2 rounded bg-indigo-600">
+          <i data-lucide="plus-circle"></i> Submit Grievance
+        </a>
+
+        <a href="{% url 'citizen:profile' %}"
+           class="flex items-center gap-3 p-2 rounded hover:bg-indigo-600">
+          <i data-lucide="user"></i> Profile
+        </a>
+      </nav>
+    </div>
+
+    <div class="text-sm text-slate-400">
+      Logged in as<br>
+      <strong class="text-white">{{ request.user.username }}</strong>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 flex items-center justify-center">
+
+    <div class="w-full max-w-xl bg-slate-800 p-8 rounded-2xl shadow-lg">
+      <h1 class="text-3xl font-bold mb-6 text-center">
+        Submit Grievance
+      </h1>
+
+      <form method="post" enctype="multipart/form-data" class="space-y-5">
+        {% csrf_token %}
+
+        <!-- Title -->
+        <div>
+          <label class="block mb-1 font-semibold">Title</label>
+          <input type="text" name="title" required
+                 class="w-full p-2 rounded bg-slate-700 text-white
+                        border border-slate-600
+                        focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+
+        <!-- Category -->
+        <div>
+          <label class="block mb-1 font-semibold">Category</label>
+          <select name="category" required
+                  class="w-full p-2 rounded bg-slate-700 text-white
+                         border border-slate-600
+                         focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            {% for cat in form.category.field.queryset %}
+              <option value="{{ cat.id }}">{{ cat.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Description -->
+        <div>
+          <label class="block mb-1 font-semibold">Description</label>
+          <textarea name="description" rows="4" required
+                    class="w-full p-2 rounded bg-slate-700 text-white
+                           border border-slate-600
+                           focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+        </div>
+
+        <!-- Attachment -->
+        <div>
+          <label class="block mb-1 font-semibold">Attach File (optional)</label>
+          <input type="file" name="attached_file"
+                 class="text-sm text-slate-300">
+        </div>
+
+        <button type="submit"
+                class="w-full py-2 rounded-lg bg-indigo-600
+                       font-semibold hover:bg-indigo-500 transition">
+          Submit Grievance
+        </button>
+      </form>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  lucide.createIcons();
+</script>
+
+</body>
 </html>
+
+
 
 
 

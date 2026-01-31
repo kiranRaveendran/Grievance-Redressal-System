@@ -2,91 +2,214 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Citizen Dashboard</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Citizen Dashboard</title>
 
-  <!-- Tailwind & Lucide -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <link rel="icon" href="{% static 'images/favicon.ico' %}">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="icon" href="{% static 'images/favicon.ico' %}">
 
-  <style>
-    :root{
-      --bg-start:#0f172a; --bg-end:#020617;
-      --brand:#0ea5a4; --brand-dark:#0b8f8b;
-      --accent:#4f46e5; --accent-dark:#4338ca;
-      --warn:#f97316; --success:#22c55e; --danger:#ef4444;
-      --text-high:#e6eef3; --text-muted:#a8bbc6;
-      --hover-card:#1e293b;
-    }
+<style>
+:root {
+  --primary:#4f46e5;
+  --primary-dark:#4338ca;
+  --secondary:#0ea5a4;
+  --bg-gradient-start:#0f172a;
+  --bg-gradient-end:#020617;
+  --text-high:#e6eef3;
+  --text-muted:#a8bbc6;
+}
 
-    html,body{height:100%; margin:0; font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto;}
-    body{ background:linear-gradient(135deg,var(--bg-start),var(--bg-end)); color:var(--text-high); overflow:hidden; }
+/* Base */
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto;
+  background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end));
+  color: var(--text-high);
+}
 
-    /* Layout */
-    .app { display:flex; height:100vh; width:100vw; }
-    aside.sidebar { width:260px; padding:28px; box-sizing:border-box; background:linear-gradient(180deg,#0f172a,#1e293b); border-right:1px solid rgba(255,255,255,0.05);}
-    main.content { flex:1; padding:24px; display:flex; flex-direction:column; gap:20px; overflow-y:auto; }
+/* App layout */
+.app { display: flex; height: 100vh; width: 100vw; overflow: hidden; }
 
-    /* Glass cards */
-    .glass{
-      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
-      border: 1px solid rgba(255,255,255,0.08);
-      box-shadow: 0 12px 28px rgba(2,6,23,0.6);
-      backdrop-filter: blur(10px);
-      border-radius:12px;
-      transition: transform 0.25s, background 0.3s, box-shadow 0.3s;
-    }
-    .glass:hover{ transform: translateY(-4px); background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02)); box-shadow:0 16px 40px rgba(0,0,0,0.6); }
+/* Sidebar */
+aside.sidebar {
+  width: 260px;
+  padding: 2rem;
+  background: linear-gradient(180deg,#0f172a,#1e293b);
+  border-right: 1px solid rgba(255,255,255,0.05);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  position: fixed;
+  height: 100vh;
+  top: 0;
+  left: 0;
+}
+aside.sidebar .brand {
+  display: flex;
+  gap: .75rem;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+aside.sidebar .brand img {
+  width: 48px;
+  height: 48px;
+  border-radius: .5rem;
+}
+aside.sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+aside.sidebar nav a {
+  display: flex;
+  gap: .75rem;
+  align-items: center;
+  padding: .75rem 1rem;
+  border-radius: .75rem;
+  font-weight: 500;
+  color: var(--text-high);
+  text-decoration: none;
+  transition: all 0.25s;
+}
+aside.sidebar nav a:hover {
+  background: linear-gradient(90deg,var(--primary),var(--primary-dark));
+  color:white;
+  transform: translateX(5px);
+}
+aside.sidebar .user-info {
+  font-size: .85rem;
+  color: var(--text-muted);
+  margin-top: auto;
+}
+aside.sidebar .user-info strong {
+  color: var(--text-high);
+}
 
-    /* Sidebar */
-    .sidebar .brand { display:flex; gap:.75rem; align-items:center; margin-bottom:20px; }
-    .sidebar .brand img{ width:44px; height:44px; border-radius:.5rem; }
-    .sidebar nav a { display:flex; gap:.6rem; align-items:center; padding:.6rem .8rem; border-radius:.5rem; color:var(--text-high); text-decoration:none; margin-bottom:.3rem; font-weight:500; transition: all 0.25s; }
-    .sidebar nav a:hover { background: linear-gradient(90deg,var(--accent),var(--accent-dark)); color:white; transform: translateX(4px); }
+/* Main content */
+main.content {
+  margin-left: 260px;
+  padding: 2rem;
+  flex: 1;
+  overflow-y: auto;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  box-sizing: border-box;
+}
 
-    /* Topbar */
-    .topbar { display:flex; align-items:center; justify-content:space-between; padding:14px; gap:12px; }
-    .topbar button { padding:.5rem 1rem; border-radius:8px; background: linear-gradient(90deg,var(--accent),var(--accent-dark)); color:white; font-weight:500; transition: transform 0.2s; }
-    .topbar button:hover{ transform: translateY(-2px); }
+/* Topbar */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255,255,255,0.05);
+  padding: 1rem 1.5rem;
+  border-radius: 1rem;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.4);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.topbar h1 { font-size: 1.75rem; font-weight:700; }
+.topbar button {
+  padding: .5rem 1.25rem;
+  border-radius: .75rem;
+  background: linear-gradient(90deg,var(--primary),var(--primary-dark));
+  font-weight: 600;
+  transition: 0.3s;
+}
+.topbar button:hover { transform: translateY(-2px); }
 
-    /* Metrics */
-    .metrics { display:grid; grid-template-columns: repeat(4, 1fr); gap:18px; }
-    .metrics .card { padding:20px; border-radius:16px; display:flex; justify-content:space-between; align-items:center; background:linear-gradient(135deg,var(--brand),var(--brand-dark)); color:white; cursor:pointer; transition: all 0.25s; }
-    .metrics .card:hover{ transform: translateY(-5px); box-shadow: 0 14px 36px rgba(0,0,0,0.6); }
-    .metrics .card i { font-size:1.8rem; opacity:0.85; }
+/* Welcome card with animated gradient */
+.welcome-card {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg,#4f46e5,#0ea5a4);
+  border-radius: 1.5rem;
+  padding: 3rem;
+  text-align: center;
+  color: white;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  overflow: hidden;
+  transition: all 0.3s;
+}
+.welcome-card::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.08), transparent 60%);
+  animation: moveBG 10s linear infinite;
+  z-index:0;
+}
+@keyframes moveBG {
+  0% { transform: rotate(0deg) translate(0,0); }
+  100% { transform: rotate(360deg) translate(0,0); }
+}
+.welcome-card * { position: relative; z-index:1; }
+.welcome-card:hover { transform: translateY(-4px); }
 
-    /* Badges */
-    .status-badge{ padding:.2rem .5rem; border-radius:9999px; font-size:.75rem; font-weight:600; display:inline-block; }
-    .status-open{ background: linear-gradient(90deg,#f59e0b,#f97316); color:white; }
-    .status-resolved{ background: linear-gradient(90deg,#22c55e,#16a34a); color:white; }
-    .status-escalated{ background: linear-gradient(90deg,#ef4444,#b91c1c); color:white; }
+.welcome-card h2 { font-size:2.25rem; font-weight:700; margin-bottom: .75rem; }
+.welcome-card p { font-size:1.05rem; color: rgba(255,255,255,0.85); margin-bottom:2rem; }
 
-    /* Table */
-    .grievances-panel { padding:16px; border-radius:14px; display:flex; flex-direction:column; min-height:0; background:var(--hover-card); }
-    .table-wrapper { overflow:auto; border-radius:12px; background:rgba(255,255,255,0.02); flex:1; }
-    table { width:100%; border-collapse:collapse; }
-    thead th{ color:var(--text-muted); font-size:.85rem; padding:.75rem; text-align:left; border-bottom:1px solid rgba(255,255,255,0.06); position:sticky; top:0; background:rgba(0,0,0,0.2); }
-    tbody td{ padding:.65rem; border-bottom:1px solid rgba(255,255,255,0.04); vertical-align:middle; }
-    tbody tr:hover{ background:rgba(255,255,255,0.06); transform: translateX(2px); transition: all 0.2s; }
+/* Quick actions buttons */
+.btn-action {
+  padding:.75rem 1.5rem;
+  border-radius: 1rem;
+  background: linear-gradient(90deg,#0ea5a4,#14b8a6);
+  color:white;
+  font-weight:600;
+  font-size:1rem;
+  transition:0.3s;
+  text-decoration:none;
+  margin:0 .5rem;
+}
+.btn-action:hover { transform: translateY(-2px); background: linear-gradient(90deg,#14b8a6,#0b8f8b); }
 
-    /* Buttons inside table */
-    .btn-view{ background: linear-gradient(90deg,var(--accent),var(--accent-dark)); color:white; padding:.3rem .6rem; border-radius:.5rem; font-size:.85rem; transition: all 0.2s; }
-    .btn-view:hover{ transform: translateY(-2px); box-shadow:0 6px 18px rgba(0,0,0,0.4); }
+/* Floating icons around card */
+.floating-icon {
+  position: absolute;
+  font-size: 2rem;
+  opacity: 0.15;
+  animation: float 6s ease-in-out infinite alternate;
+}
+.floating-icon:nth-child(1){ top: 10%; left: 5%; animation-delay:0s;}
+.floating-icon:nth-child(2){ top: 20%; right: 10%; animation-delay:2s;}
+.floating-icon:nth-child(3){ bottom: 15%; left: 20%; animation-delay:4s;}
+@keyframes float {
+  0% { transform: translateY(0px) rotate(0deg);}
+  100% { transform: translateY(-20px) rotate(15deg);}
+}
 
-    @media(max-width:1024px){ aside.sidebar{display:none;} .metrics{grid-template-columns: repeat(2,1fr);} }
-  </style>
+/* Responsive */
+@media(max-width:1024px){
+  aside.sidebar { display:none; }
+  main.content { margin-left:0; }
+  .btn-action { margin: .5rem 0; }
+}
+</style>
 </head>
 <body>
-<div class="app">
 
-  <!-- SIDEBAR -->
-  <aside class="sidebar glass">
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
     <div class="brand">
-      <img src="{% static 'images/favicon.ico' %}" alt="logo">
+      <img src="{% static 'images/favicon.ico' %}" alt="Logo">
       <div>
-        <div style="font-weight:700;">Citizen</div>
+        <strong>Citizen</strong>
         <div class="muted" style="font-size:.8rem;">Dashboard</div>
       </div>
     </div>
@@ -95,106 +218,60 @@
       <a href="{% url 'citizen:dashboard' %}"><i data-lucide="home" class="w-4 h-4"></i> Dashboard</a>
       <a href="{% url 'citizen:grievances_list' %}"><i data-lucide="file-text" class="w-4 h-4"></i> My Grievances</a>
       <a href="{% url 'citizen:submit_grievance' %}"><i data-lucide="plus-circle" class="w-4 h-4"></i> Submit Grievance</a>
-      <a href="{% url 'citizen:notifications' %}"><i data-lucide="bell" class="w-4 h-4"></i> Notifications</a>
       <a href="{% url 'citizen:profile' %}"><i data-lucide="user" class="w-4 h-4"></i> Profile</a>
     </nav>
 
-    <div style="margin-top:20px;font-size:.85rem;" class="muted">
-      <div>Logged in as</div>
-      <div style="font-weight:600;">{{ request.user.username }}</div>
+    <div class="user-info">
+      Logged in as <br><strong>{{ request.user.username }}</strong>
     </div>
   </aside>
 
-  <!-- MAIN -->
+  <!-- Main -->
   <main class="content">
-    <!-- TOPBAR -->
-    <div class="topbar glass">
-      <div style="font-size:1.25rem;font-weight:600;">Dashboard</div>
+    <!-- Topbar -->
+    <div class="topbar">
+      <h1 id="greeting">Welcome!</h1>
       <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}
         <button type="submit">Logout</button>
       </form>
     </div>
 
-    <!-- METRICS -->
-    <div class="metrics">
-      <div class="card">
-        <div>
-          <div class="muted">Total Grievances</div>
-          <div id="card-total" style="font-size:1.6rem;font-weight:700;">{{ total_grievances }}</div>
-        </div>
-        <i data-lucide="list"></i>
-      </div>
+    <!-- Welcome Card -->
+    <div class="welcome-card glass">
+      <!-- Floating icons -->
+      <i data-lucide="file-text" class="floating-icon"></i>
+      <i data-lucide="bell" class="floating-icon"></i>
+      <i data-lucide="plus-circle" class="floating-icon"></i>
 
-      <div class="card" style="background:linear-gradient(135deg,#f59e0b,#f97316)">
-        <div>
-          <div class="muted">Open</div>
-          <div id="card-open" style="font-size:1.6rem;font-weight:700;">{{ open_grievances }}</div>
-        </div>
-        <i data-lucide="clock"></i>
-      </div>
-
-      <div class="card" style="background:linear-gradient(135deg,#22c55e,#16a34a)">
-        <div>
-          <div class="muted">Resolved</div>
-          <div id="card-resolved" style="font-size:1.6rem;font-weight:700;">{{ resolved_grievances }}</div>
-        </div>
-        <i data-lucide="check-circle"></i>
-      </div>
-
-      <div class="card" style="background:linear-gradient(135deg,#ef4444,#b91c1c)">
-        <div>
-          <div class="muted">Escalated</div>
-          <div id="card-escalated" style="font-size:1.6rem;font-weight:700;">{{ escalated_grievances }}</div>
-        </div>
-        <i data-lucide="alert-circle"></i>
+      <h2 id="welcome-msg">👋 Hello, {{ request.user.first_name|default:request.user.username }}!</h2>
+      <p>Track your grievances, submit new requests, and manage your profile easily.</p>
+      <div>
+        <a href="{% url 'citizen:submit_grievance' %}" class="btn-action">Submit a Grievance</a>
+        <a href="{% url 'citizen:grievances_list' %}" class="btn-action">My Grievances</a>
       </div>
     </div>
-
-    <!-- GRIEVANCES TABLE -->
-    <section class="grievances-panel glass">
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>ID</th><th>Title</th><th>Status</th><th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% if grievances %}
-              {% for g in grievances %}
-                <tr>
-                  <td>{{ g.id }}</td>
-                  <td>{{ g.title }}</td>
-                  <td>
-                    {% if g.status == g.STATUS_OPEN %}
-                      <span class="status-badge status-open">Open</span>
-                    {% elif g.status == g.STATUS_RESOLVED %}
-                      <span class="status-badge status-resolved">Resolved</span>
-                    {% else %}
-                      <span class="status-badge status-escalated">Escalated</span>
-                    {% endif %}
-                  </td>
-                  <td>
-                    <a class="btn-view" href="{% url 'citizen:grievance_detail' g.id %}">View</a>
-                  </td>
-                </tr>
-              {% endfor %}
-            {% else %}
-              <tr>
-                <td colspan="4" style="text-align:center;color:var(--text-muted);padding:16px;">
-                  No grievances submitted yet.
-                </td>
-              </tr>
-            {% endif %}
-          </tbody>
-        </table>
-      </div>
-    </section>
-
   </main>
 </div>
 
-<script>lucide.createIcons();</script>
+<script>
+lucide.createIcons();
+
+// Dynamic greeting
+const now = new Date();
+const hours = now.getHours();
+const greeting = document.getElementById('greeting');
+const welcomeMsg = document.getElementById('welcome-msg');
+let emoji = "👋";
+
+if(hours<12){ emoji="🌞"; greeting.innerText="Good Morning!";}
+else if(hours<18){ emoji="🌤️"; greeting.innerText="Good Afternoon!";}
+else { emoji="🌛"; greeting.innerText="Good Evening!";}
+welcomeMsg.innerText = `${emoji} Hello, {{ request.user.first_name|default:request.user.username }}!`;
+</script>
+
 </body>
 </html>
+
+
+
 
